@@ -41,43 +41,72 @@ End Function
 Function numPad(number)
 	numPad = FormatNumber(number, 1)
 End Function
-' Create a sleep function
-Sub sleep(x)
-	'WScript.Sleep(x)
+' Subroutine to sleep for a specified number of milliseconds using a timer
+Sub sleep(milliseconds As Long)
+    Dim startTime As Single
+    Dim endTime As Single
+    
+    ' Get the current time
+    startTime = Timer
+    
+    ' Calculate the end time by adding the desired milliseconds
+    endTime = startTime + (milliseconds / 1000)
+    
+    ' Handle midnight rollover
+    If endTime >= 86400 Then ' 86400 seconds in a day
+        endTime = endTime - 86400
+        Do While Timer >= startTime Or Timer < endTime
+            DoEvents ' Allow the system to process other events
+        Loop
+    Else
+        Do While Timer < endTime
+            DoEvents ' Allow the system to process other events
+        Loop
+    End If
 End Sub
 
-' Function to change control settings\
+
+
+' Function to change control settings
 ' status is the override checkbox
 ' control is the name of the control
 ' sp is the setting to change to
 ' mode is what mode we want, auto or manual
 Sub changeControl(status, control, sp, mode)
-	Dim Setpoint
-	Setpoint = numPad(sp)
-	If mode = "manual" Then
-		If status.value <> True Then
-			status.value = True
-			If control.value <> Setpoint Then
-				control.value = Setpoint 
-				sleep(sleepX)
-			End If
-		Else
-			If control.value <> Setpoint Then
-				control.value = Setpoint 
-				'sleep(sleepX)
-			End If
-		End If
-	' If mode is "Auto", check to see if we are in "manual"
-	' If we are in manual ,change to auto.
-	Else 
-		If status.value = True Then
-			status.value = False
-			sleep(sleepX)
-		End If
-	End If
+    Dim Setpoint
+    
+    ' Convert the desired setpoint to the correct format using numPad function
+    Setpoint = numPad(sp)
+    
+    ' Check if the mode is manual
+    If mode = "manual" Then
+        ' If status is not already checked, check it
+        If status.value <> True Then
+            status.value = True
+            ' If control value is not equal to the setpoint, set it and sleep
+            If control.value <> Setpoint Then
+                control.value = Setpoint 
+                sleep sleepX
+            End If
+        Else
+            ' If status is already checked, just set the control value if it is not equal to the setpoint
+            If control.value <> Setpoint Then
+                control.value = Setpoint 
+                ' Sleep can be uncommented if needed
+                ' Sleep sleepX
+            End If
+        End If
+    Else
+        ' If mode is auto, check if we are in manual
+        ' If we are in manual, change to auto
+        If status.value = True Then
+            status.value = False
+            sleep sleepX
+        End If
+    End If
 End Sub
-' Cooling scenario A
-Sub ScenarioA(raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2)
+' Set Scenario
+Sub Scenario(raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2)
 	changeControl ahu1RAdamperMode, ahu1RAdamper, raDamper1, "manual"
 	changeControl ahu2RAdamperMode, ahu2RAdamper, raDamper2, "manual"
 	changeControl ahu1OAdamperMode, ahu1OAdamper, oaDamper1, "manual"
