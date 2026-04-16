@@ -88,8 +88,6 @@ If IsSelected = True Then
 				Call condQ()
 			ElseIf outsideTemp.value =< 10 And outsideTemp.value >= 0 Then
 				Call condR()
-			Else
-				Call condS()
 			End If
 			dataWindow.value = "Normal Heating Mode"
 		ElseIf outsideTemp.value =< 0 Then

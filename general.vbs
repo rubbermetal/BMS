@@ -1,7 +1,3 @@
-Class ControlField
-	Public value
-End Class
-
 Dim sleepX, control, status, steamPressure
 steamPressure = alphanum11.value - 1
 
@@ -38,42 +34,6 @@ Function chillerMode(  )
 		End If
 	End If
 End Function
-Function StaticPressureEast(timeCheck )
-	Dim spSp, minSpeed, maxSpeed
-	minSpeed = "83.0"
-	maxSpeed = "99.0"
-	If timeCheck = 30 Or timeCheck = 0 Then
-			If alphanum10.value > eastBuldingStatic.value And ahu1BlowerControl.value < maxSpeed Then
-				speed1 = ahu1BlowerControl.value + 1
-			ElseIf alphanum10.value < eastBuldingStatic.value And ahu1BlowerControl.value > minSpeed Then
-				speed1 = ahu1BlowerControl.value  - 1
-			Else
-				speed1 = ahu1BlowerControl.value
-			End If
-	Else
-		speed1 = ahu1BlowerControl.value
-	End If
-	changeControl ahu1BlowerMode, ahu1BlowerControl, speed1, "manual"
-End Function
-
-Function StaticPressureWest(timeCheck )
-	Dim spSp, minSpeed, maxSpeed
-	minSpeed = "83.0"
-	maxSpeed = "99.0"
-	If timeCheck = 30 Or timeCheck = 0 Then
-			If alphanum100.value > alphanum21.value And ahu2BlowerControl.value < maxSpeed Then
-				speed2 = ahu2BlowerControl.value + 1
-			ElseIf alphanum100.value < alphanum21.value And ahu2BlowerControl.value > minSpeed Then
-				speed2 = ahu2BlowerControl.value  - 1
-			Else
-				speed2 = ahu2BlowerControl.value
-			End If
-	Else
-		speed2 = ahu2BlowerControl.value
-	End If
-	changeControl ahu2BlowerMode, ahu2BlowerControl, speed2, "manual"
-End Function
-
 Function HumidityAdjust ( t  )
 	If t >= 45 And t < 50 Then
 		x = 40
@@ -179,22 +139,6 @@ Function dupControl( )
 	If ahu2HtLo <> ahu1HtLo And ahu2HtLoMode <> False Then
 		ahu2HtSpLo.value = ahu1HtSpLo.value
 	End If
-End Function
-
-Function CustomLog(x)
-	Dim result, y, power, term, n, maxIterations
-
-	maxIterations = 100
-	y = (x - 1) / (x + 1)
-	result = 0
-	power = y
-	term = 2 * power / 1
-	For n = 1 To maxIterations
-		result = result + term
-		power = power * y * y
-		term = 2 * power / (2 * n + 1)
-		Next
-	CustomLog = result
 End Function
 
 Function RoundToOneDecimal(number)
@@ -524,98 +468,6 @@ Function condC ( )
 			nosp = True
 			ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
 End Function
-Function condC_1 ( )
-			dataWindow.value = "Cooling Mode"
-			raDamper1 = 41
-			raDamper2 = 41
-			oaDamper1 = 55
-			oaDamper2 = 55
-			blowerControl1 = 98
-			blowerControl2 = 98
-			If outsideTemp.value > alphanum3.value Then 
-				hv4Damper = 50 
-			}
-			Else
-				hv4Damper = 50
-			End If
-			rhSp1 = 55
-			rhSp2 = 55
-			clgSp1 = 55
-			clgSp2 = 55
-			htgSp1 = 55
-			htgSp2 = 55
-			nosp = True
-			ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
-End Function
-Function condC_2 ( )
-			dataWindow.value = "Cooling Mode"
-			raDamper1 = 42
-			raDamper2 = 42
-			oaDamper1 = 55
-			oaDamper2 = 55
-			blowerControl1 = 98
-			blowerControl2 = 98
-			If outsideTemp.value > alphanum3.value Then 
-				hv4Damper = 50 
-			}
-			Else
-				hv4Damper = 50
-			End If
-			rhSp1 = 55
-			rhSp2 = 55
-			clgSp1 = 55
-			clgSp2 = 55
-			htgSp1 = 55
-			htgSp2 = 55
-			nosp = True
-			ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
-End Function
-Function condC_3 ( )
-			dataWindow.value = "Cooling Mode"
-			raDamper1 = 43
-			raDamper2 = 43
-			oaDamper1 = 55
-			oaDamper2 = 55
-			blowerControl1 = 98
-			blowerControl2 = 98
-			If outsideTemp.value > alphanum3.value Then 
-				hv4Damper = 50 
-			}
-			Else
-				hv4Damper = 50
-			End If
-			rhSp1 = 55
-			rhSp2 = 55
-			clgSp1 = 55
-			clgSp2 = 55
-			htgSp1 = 55
-			htgSp2 = 55
-			nosp = True
-			ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
-End Function
-Function condC_4 ( )
-			dataWindow.value = "Cooling Mode"
-			raDamper1 = 44
-			raDamper2 = 44
-			oaDamper1 = 55
-			oaDamper2 = 55
-			blowerControl1 = 98
-			blowerControl2 = 98
-			If outsideTemp.value > alphanum3.value Then 
-				hv4Damper = 50 
-			}
-			Else
-				hv4Damper = 50
-			End If
-			rhSp1 = 55
-			rhSp2 = 55
-			clgSp1 = 55
-			clgSp2 = 55
-			htgSp1 = 55
-			htgSp2 = 55
-			nosp = True
-			ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
-End Function
 Function condD ( )
 			dataWindow.value = "Cooling Mode"
 			raDamper1 = 45
@@ -639,100 +491,6 @@ Function condD ( )
 			nosp = True
 			ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
 End Function
-Function condD_1 ( )
-			dataWindow.value = "Cooling Mode"
-			raDamper1 = 46
-			raDamper2 = 46
-			oaDamper1 = 55
-			oaDamper2 = 55
-			blowerControl1 = 98
-			blowerControl2 = 98
-			If outsideTemp.value > alphanum3.value Then 
-				hv4Damper = 50 
-			}
-			Else
-				hv4Damper = 100
-			End If
-			rhSp1 = 55
-			rhSp2 = 55
-			clgSp1 = 55
-			clgSp2 = 55
-			htgSp1 = 55
-			htgSp2 = 55
-			nosp = True
-			ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
-End Function
-Function condD_2 ( )
-			dataWindow.value = "Cooling Mode"
-			raDamper1 = 47
-			raDamper2 = 47
-			oaDamper1 = 55
-			oaDamper2 = 55
-			blowerControl1 = 98
-			blowerControl2 = 98
-			If outsideTemp.value > alphanum3.value Then 
-				hv4Damper = 50 
-			}
-			Else
-				hv4Damper = 100
-			End If
-			rhSp1 = 55
-			rhSp2 = 55
-			clgSp1 = 55
-			clgSp2 = 55
-			htgSp1 = 55
-			htgSp2 = 55
-			nosp = True
-			ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
-End Function
-Function condD_3 ( )
-			dataWindow.value = "Cooling Mode"
-			raDamper1 = 48
-			raDamper2 = 48
-			oaDamper1 = 55
-			oaDamper2 = 55
-			blowerControl1 = 98
-			blowerControl2 = 98
-			If outsideTemp.value > alphanum3.value Then 
-				hv4Damper = 50 
-			}
-			Else
-				hv4Damper = 100
-			End If
-			rhSp1 = 55
-			rhSp2 = 55
-			clgSp1 = 55
-			clgSp2 = 55
-			htgSp1 = 55
-			htgSp2 = 55
-			nosp = True
-			ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
-End Function
-
-Function condD_4 ( )
-			dataWindow.value = "Cooling Mode"
-			raDamper1 = 49
-			raDamper2 = 49
-			oaDamper1 = 55
-			oaDamper2 = 55
-			blowerControl1 = 98
-			blowerControl2 = 98
-			If outsideTemp.value > alphanum3.value Then 
-				hv4Damper = 50 
-			}
-			Else
-				hv4Damper = 100
-			End If
-			rhSp1 = 55
-			rhSp2 = 55
-			clgSp1 = 55
-			clgSp2 = 55
-			htgSp1 = 55
-			htgSp2 = 55
-			nosp = True
-			ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
-End Function
-
 Function condE ( )
 				dataWindow.value = "Free Cooling Mode"
 				raDamper1 = 95
@@ -811,13 +569,7 @@ Function condI ( )
 				raDamper2 = 65
 				oaDamper1 = 100
 				oaDamper2 = 100
-				If spMaintain.value = True Then
-					Call StaticPressureEast(currentMinutes)
-					Call StaticPressureWest(currentMinutes)
-					nosp = False
-				Else
-					nosp = True
-				End If
+				nosp = True
 				blowerControl1 = 82
 				blowerControl2 = 82
 				hv4Damper = 50
@@ -852,13 +604,7 @@ Function condK ( )
 				raDamper2 = 50
 				oaDamper1 = 100
 				oaDamper2 = 100
-				If spMaintain.value = True Then
-					Call StaticPressureEast(currentMinutes)
-					Call StaticPressureWest(currentMinutes)
-					nosp = False
-				Else
-					nosp = True
-				End If
+				nosp = True
 				blowerControl1 = 82
 				blowerControl2 = 82
 				hv4Damper = 50
@@ -875,13 +621,7 @@ Function condL ( )
 				raDamper2 = 50
 				oaDamper1 = 70
 				oaDamper2 = 70
-				If spMaintain.value = True Then
-					Call StaticPressureEast(currentMinutes)
-					Call StaticPressureWest(currentMinutes)
-					nosp = False
-				Else
-					nosp = True
-				End If
+				nosp = True
 				blowerControl1 = 82
 				blowerControl2 = 82
 				hv4Damper = 60
@@ -898,13 +638,7 @@ Function condM ( )
 				raDamper2 = 50
 				oaDamper1 = 65
 				oaDamper2 = 65
-				If spMaintain.value = True Then
-					Call StaticPressureEast(currentMinutes)
-					Call StaticPressureWest(currentMinutes)
-					nosp = False
-				Else
-					nosp = True
-				End If
+				nosp = True
 				blowerControl1 = 82
 				blowerControl2 = 82
 				hv4Damper = 60
@@ -921,13 +655,7 @@ Function condN ( )
 				raDamper2 = 50
 				oaDamper1 = 60
 				oaDamper2 = 60
-				If spMaintain.value = True Then
-					Call StaticPressureEast(currentMinutes)
-					Call StaticPressureWest(currentMinutes)
-					nosp = False
-				Else
-					nosp = True
-				End If
+				nosp = True
 				blowerControl1 = 88
 				blowerControl2 = 88
 				hv4Damper = 60
@@ -944,13 +672,7 @@ Function condO ( )
 				raDamper2 = 50
 				oaDamper1 = 55
 				oaDamper2 = 55
-				If spMaintain.value = True Then
-					Call StaticPressureEast(currentMinutes)
-					Call StaticPressureWest(currentMinutes)
-					nosp = False
-				Else
-					nosp = True
-				End If
+				nosp = True
 				blowerControl1 = 88
 				blowerControl2 = 88
 				hv4Damper = 60
@@ -967,13 +689,7 @@ Function condP ( )
 				raDamper2 = 50
 				oaDamper1 = 50
 				oaDamper2 = 50
-				If spMaintain.value = True Then
-					Call StaticPressureEast(currentMinutes)
-					Call StaticPressureWest(currentMinutes)
-					nosp = False
-				Else
-					nosp = True
-				End If
+				nosp = True
 				blowerControl1 = 86
 				blowerControl2 = 86
 				hv4Damper = 60
@@ -990,13 +706,7 @@ Function condQ ( )
 				raDamper2 =45
 				oaDamper1 = 45
 				oaDamper2 = 45
-				If spMaintain.value = True Then
-					Call StaticPressureEast(currentMinutes)
-					Call StaticPressureWest(currentMinutes)
-					nosp = False
-				Else
-					nosp = True
-				End If
+				nosp = True
 				blowerControl1 = 84
 				blowerControl2 = 84
 				hv4Damper = 60
@@ -1013,40 +723,11 @@ Function condR ( )
 				raDamper2 = 45
 				oaDamper1 = 45
 				oaDamper2 = 45
-				If spMaintain.value = True Then
-					Call StaticPressureEast(currentMinutes)
-					Call StaticPressureWest(currentMinutes)
-					nosp = False
-				Else
-					nosp = True
-				End If
+				nosp = True
 				blowerControl1 = 84
 				blowerControl2 = 84
 				hv4Damper = 60
 				rhSp1 =  HumidityAdjust( outsideTemp.value )
-				rhSp2 = HumidityAdjust( outsideTemp.value )
-				clgSp1 = 55
-				clgSp2 = 55
-				htgSp1 = 60
-				htgSp2 = 60
-				ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
-End Function
-Function condS ( )
-				raDamper1 = 45
-				raDamper2 = 45
-				oaDamper1 = 45
-				oaDamper2 = 45
-				If spMaintain.value = True Then
-					Call StaticPressureEast(currentMinutes)
-					Call StaticPressureWest(currentMinutes)
-					nosp = False
-				Else
-					nosp = True
-				End If
-				blowerControl1 = 84
-				blowerControl2 = 84
-				hv4Damper = 60
-				rhSp1 = HumidityAdjust( outsideTemp.value )
 				rhSp2 = HumidityAdjust( outsideTemp.value )
 				clgSp1 = 55
 				clgSp2 = 55
@@ -1059,13 +740,6 @@ Function condT ( )
 			raDamper2 = 45
 			oaDamper1 = 45
 			oaDamper2 = 45
-				If spMaintain.value = True Then
-					Call StaticPressureEast(currentMinutes)
-					Call StaticPressureWest(currentMinutes)
-					nosp = False
-				Else
-					nosp = True
-				End If
 			blowerControl1 = 84
 			blowerControl2 = 84
 			hv4Damper = 60
