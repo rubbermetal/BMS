@@ -1,430 +1,1080 @@
-' VBScript for HVAC control system
-
 Class ControlField
-    Public value
+	Public value
 End Class
 
-Dim sleepDuration, controlField, statusField
+Dim sleepX, control, status, steamPressure
+steamPressure = alphanum11.value - 1
 
-' Time to sleep between setting changes
-sleepDuration = 2000
+Function timeFetch ( )
+	
+	currentTime = Time
+	timeNow.value = currentTime
 
-' Function to calculate the vapor pressure of water
-Function calculateVaporPressure(temperature, pressure)
-    calculateVaporPressure = 0.61094 * Exp(17.625 * temperature / (temperature + 243.04)) * (pressure / 101.325)
 End Function
 
-' Function to calculate the saturation vapor pressure of water
-Function calculateSaturationVaporPressure(temperature)
-    calculateSaturationVaporPressure = 0.61094 * Exp(17.625 * temperature / (temperature + 243.04))
+Function dp ( )
+	a = 17.27
+	b = 237.7
+	avgRaTemp = (((CDbl(Abs(ahu2RAtemp.value)) + CDbl(Abs(ahu1RAtemp.value))) / 2) - 32)  *  5 / 9
+	avgRaRh = (CDbl(ahu1RH.value) + CDbl(ahu2RH.value)) / 2
+	avgRaRhFormatted = avgRaRh / 100
+
+	dp =  RoundToOneDecimal(((avgRaTemp  -  ((100 - avgRaRh) / 5)) * 1.8) + 32) 
+End Function
+Function chillerMode(  )
+	Dim ra, sa, diff
+	ra = (CDbl(ahu1MA.value) + CDbl(ahu2MA.value)) / 2
+	sa = (CDbl(ahu1DA.value) + CDbl(ahu2DA.value)) / 2
+	diff = CDbl(ra - sa)
+	If diff > 3 Then
+		If chillerStatus.value <> "ON" Then
+			chillerStatus.value = "ON"
+			chillerStatus.linecolor = RGB(0,255,0)
+		End If
+	Else 
+		If chillerStatus.value <> "OFF" Then
+			chillerStatus.value = "OFF"
+			chillerStatus.linecolor = RGB(255,0,0)
+		End If
+	End If
+End Function
+Function StaticPressureEast(timeCheck )
+	Dim spSp, minSpeed, maxSpeed
+	minSpeed = "83.0"
+	maxSpeed = "99.0"
+	If timeCheck = 30 Or timeCheck = 0 Then
+			If alphanum10.value > eastBuldingStatic.value And ahu1BlowerControl.value < maxSpeed Then
+				speed1 = ahu1BlowerControl.value + 1
+			ElseIf alphanum10.value < eastBuldingStatic.value And ahu1BlowerControl.value > minSpeed Then
+				speed1 = ahu1BlowerControl.value  - 1
+			Else
+				speed1 = ahu1BlowerControl.value
+			End If
+	Else
+		speed1 = ahu1BlowerControl.value
+	End If
+	changeControl ahu1BlowerMode, ahu1BlowerControl, speed1, "manual"
 End Function
 
-' Function to calculate the wet bulb temperature
-Function calculateWetBulbTemperature(dryBulbTemp, relativeHumidity, pressure)
-    calculateWetBulbTemperature = wetBulbTemperature(dryBulbTemp, relativeHumidity, pressure)
+Function StaticPressureWest(timeCheck )
+	Dim spSp, minSpeed, maxSpeed
+	minSpeed = "83.0"
+	maxSpeed = "99.0"
+	If timeCheck = 30 Or timeCheck = 0 Then
+			If alphanum100.value > alphanum21.value And ahu2BlowerControl.value < maxSpeed Then
+				speed2 = ahu2BlowerControl.value + 1
+			ElseIf alphanum100.value < alphanum21.value And ahu2BlowerControl.value > minSpeed Then
+				speed2 = ahu2BlowerControl.value  - 1
+			Else
+				speed2 = ahu2BlowerControl.value
+			End If
+	Else
+		speed2 = ahu2BlowerControl.value
+	End If
+	changeControl ahu2BlowerMode, ahu2BlowerControl, speed2, "manual"
 End Function
 
-' Function to calculate wet bulb temperature using Newton-Raphson iteration
-Function wetBulbTemperature(dryBulbTemp, relativeHumidity, pressure)
-    Dim normalHumidityRatio, resultTemp, newHumidityRatio, newHumidityRatio2, dwBydTwb
-
-    normalHumidityRatio = calculateHumidityRatio(dryBulbTemp, relativeHumidity, pressure)
-    resultTemp = dryBulbTemp
-
-    ' Iteratively solve for wet bulb temperature using Newton-Raphson method
-    newHumidityRatio = calculateHumidityRatioFromWetBulb(dryBulbTemp, resultTemp, pressure)
-
-    Do While Abs((newHumidityRatio - normalHumidityRatio) / normalHumidityRatio) > 0.00001
-        newHumidityRatio2 = calculateHumidityRatioFromWetBulb(dryBulbTemp, resultTemp - 0.001, pressure)
-        dwBydTwb = (newHumidityRatio - newHumidityRatio2) / 0.001
-        resultTemp = resultTemp - (newHumidityRatio - normalHumidityRatio) / dwBydTwb
-        newHumidityRatio = calculateHumidityRatioFromWetBulb(dryBulbTemp, resultTemp, pressure)
-    Loop
-
-    wetBulbTemperature = resultTemp
+Function HumidityAdjust ( t  )
+	If t >= 45 And t < 50 Then
+		x = 40
+	ElseIf t >= 40 And t < 45 Then
+		x = 37.5
+	ElseIf t >= 35 And t < 40 Then
+		x = 35
+	ElseIf t >= 30 And t < 40 Then
+		x = 32.5
+	ElseIf t >= 25 And t < 30 Then
+		x = 30
+	ElseIf t >= 20 And t < 25 Then
+		x = 27.5
+	ElseIf t >= 15 And t < 20 Then
+		x = 25
+	ElseIf t >= 10 And t < 15 Then
+		x = 22.5
+	ElseIf t >= 5 And t < 10 Then
+		x = 17.5
+	ElseIf t >= 0 And t < 5 Then
+		x = 15
+	ElseIf t >= -10 And t < 0 Then
+		x = 15
+	ElseIf t >= -20 And t < -10 Then
+		x = 10
+	ElseIf t >= -30 And t < -20 Then
+		x = 5
+	ElseIf t >= -40 And t < -30 Then
+		x = 5
+	Else 
+		x = 45
+	End If
+	HumidityAdjust = x
 End Function
 
-' Function to calculate humidity ratio given dry bulb and wet bulb temperatures
-Function calculateHumidityRatioFromWetBulb(dryBulbTemp, wetBulbTemp, pressure)
-    Dim saturationPressure, humidityRatio
-
-    saturationPressure = calculateSaturationPressure(wetBulbTemp)
-    humidityRatio = 0.62198 * saturationPressure / (pressure - saturationPressure)
-
-    If dryBulbTemp >= 0 Then
-        calculateHumidityRatioFromWetBulb = (((2501 - 2.326 * wetBulbTemp) * humidityRatio - 1.006 * (dryBulbTemp - wetBulbTemp)) / (2501 + 1.86 * dryBulbTemp - 4.186 * wetBulbTemp))
-    Else
-        calculateHumidityRatioFromWetBulb = (((2830 - 0.24 * wetBulbTemp) * humidityRatio - 1.006 * (dryBulbTemp - wetBulbTemp)) / (2830 + 1.86 * dryBulbTemp - 2.1 * wetBulbTemp))
-    End If
+Function AlarmStatus(  )
+ 	Dim player
+	Dim IsPlaying
+	
+	
+	' hv4Alarm.value = 3 is normal, no alarm
+	If hv4Alarm.value <> 3  And alarmSilence.value <> True Then
+		Set player = CreateObject("WMPlayer.OCX")
+		player.URL = "C:\Program Files\Honeywell\client\abstract\hv4-blower-alarm.mp3"
+		player.Controls.play
+		MsgBox "HV4 is in alarm, blower is offline."
+		Set player = Nothing
+		alarmSilence.value = True
+		Exit Function
+	ElseIf ahu2Alarm.value <> 3 And alarmSilence.value <> True Then
+		Set player = CreateObject("WMPlayer.OCX")
+		player.URL = "C:\Program Files\Honeywell\client\abstract\ahu2-blower-alarm.mp3"
+		player.Controls.play
+		MsgBox "AHU-2 is in alarm, blower is offline."
+		Set player = Nothing
+		alarmSilence.value = True
+		Exit Function
+	ElseIf ahu1Alarm.value <> 3 And alarmSilence.value <> True Then
+		Set player = CreateObject("WMPlayer.OCX")
+		player.URL = "C:\Program Files\Honeywell\client\abstract\ahu1-blower-alarm.mp3"
+		player.Controls.play
+		MsgBox "AHU-1 is in alarm, blower is offline."
+		Set player = Nothing
+		alarmSilence.value = True
+		Exit Function
+	End If
 End Function
 
-' Function to calculate humidity ratio given dry bulb temperature and relative humidity
-Function calculateHumidityRatio(dryBulbTemp, relativeHumidity, pressure)
-    Dim saturationPressure
+Function dupControl( )
+	Dim ahu2HtHi, ahu2HtLo, ahu2HtLoMode, ahu2HtHiMode, ahu1HtHi, ahu1HtLo, ahu1HtHiMode, ahu1HtLoMode
 
-    saturationPressure = calculateSaturationPressure(dryBulbTemp)
-    calculateHumidityRatio = 0.62198 * relativeHumidity * saturationPressure / (pressure - relativeHumidity * saturationPressure)
+	ahu2HtHi = numPad(ahu2HtSpHi.value)
+	ahu2HtLo = numPad(ahu2HtSpLo.value)
+	ahu2HtHiMode = ahu2HtSpHiMode.value
+	ahu2HtLoMode = ahu2HtSpLoMode.value
+
+	ahu1HtHi = numPad(ahu1HtSpHi.value)
+	ahu1HtLo = numPad(ahu1HtSpLo.value)
+	ahu1HtHiMode = ahu1HtSpHiMode.value
+	ahu1HtLoMode = ahu1HtSpLoMode.value
+
+	' If ahu1 Heat Hi set point is in auto then put Ahu2 in auto
+	If ahu1HtSpHiMode.value <> True And ahu2HtSpHiMode.value <> False Then
+		ahu2HtSpHiMode.value = False
+	End If
+	' If ahu1 Heat Lo set point is in auto then put Ahu2 in auto
+	If ahu1HtSpLoMode.value <> True And ahu2HtSpLoMode.value <> False Then
+		ahu2HtSpLoMode.value = False
+	End If
+	' If ahu1 Heat Hi set point is in Manual then put Ahu2 in Manual
+	If ahu1HtSpHiMode.value <> False And ahu2HtSpHiMode.value <> True Then
+		ahu2HtSpHiMode.value = True
+	End If
+	' If ahu1 Heat Lo set point is in Manual then put Ahu2 in Manual
+	If ahu1HtSpLoMode.value <> False And ahu2HtSpLoMode.value <> True Then
+		ahu2HtSpLoMode.value = True
+	End If
+	' If ahu2 heat hi set pont doesn't match ahu1 then update it to match
+	If ahu2HtHi <> ahu1HtHi And ahu2HtHiMode <> False Then
+		ahu2HtSpHi.value = ahu1HtSpHi.value
+	End If
+	' If ahu2 heat lo set pont doesn't match ahu1 then update it to match
+	If ahu2HtLo <> ahu1HtLo And ahu2HtLoMode <> False Then
+		ahu2HtSpLo.value = ahu1HtSpLo.value
+	End If
 End Function
 
-' Function to compute partial vapor pressure
-Function calculatePartialVaporPressure(pressure, humidityRatio)
-    calculatePartialVaporPressure = pressure * humidityRatio / (0.62198 + humidityRatio)
+Function CustomLog(x)
+	Dim result, y, power, term, n, maxIterations
+
+	maxIterations = 100
+	y = (x - 1) / (x + 1)
+	result = 0
+	power = y
+	term = 2 * power / 1
+	For n = 1 To maxIterations
+		result = result + term
+		power = power * y * y
+		term = 2 * power / (2 * n + 1)
+		Next
+	CustomLog = result
 End Function
 
-' Function to calculate saturation pressure given dry bulb temperature
-Function calculateSaturationPressure(dryBulbTemp)
-    Dim C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, kelvinTemp
-
-    ' Coefficients for the equations
-    C1 = -5674.5359
-    C2 = 6.3925247
-    C3 = -0.009677843
-    C4 = 0.00000062215701
-    C5 = 2.0747825E-09
-    C6 = -9.484024E-13
-    C7 = 4.1635019
-    C8 = -5800.2206
-    C9 = 1.3914993
-    C10 = -0.048640239
-    C11 = 0.000041764768
-    C12 = -0.000000014452093
-    C13 = 6.5459673
-
-    kelvinTemp = dryBulbTemp + 273.15
-
-    If kelvinTemp <= 273.15 Then
-        calculateSaturationPressure = Exp(C1 / kelvinTemp + C2 + C3 * kelvinTemp + C4 * kelvinTemp ^ 2 + C5 * kelvinTemp ^ 3 + C6 * kelvinTemp ^ 4 + C7 * Log(kelvinTemp)) / 1000
-    Else
-        calculateSaturationPressure = Exp(C8 / kelvinTemp + C9 + C10 * kelvinTemp + C11 * kelvinTemp ^ 2 + C12 * kelvinTemp ^ 3 + C13 * Log(kelvinTemp)) / 1000
-    End If
+Function RoundToOneDecimal(number)
+	RoundToOneDecimal = Int(number * 10 + 0.5) / 10
 End Function
 
-' Function to calculate relative humidity given dry bulb and wet bulb temperatures
-Function calculateRelativeHumidity(dryBulbTemp, wetBulbTemp, pressure)
-    Dim humidityRatio, result
-
-    humidityRatio = calculateHumidityRatioFromWetBulb(dryBulbTemp, wetBulbTemp, pressure)
-    result = calculatePartialVaporPressure(pressure, humidityRatio) / calculateSaturationPressure(dryBulbTemp)
-
-    calculateRelativeHumidity = result
+Function calculateDP(T,H)
+	Dim Tc
+	Tc = (T - 32) * 5 / 9
+	calculateDP = RoundToOneDecimal(((Tc  -  ((100 - H) / 5)) * 1.8) + 32)
 End Function
 
-' Function to calculate relative humidity given dry bulb temperature and humidity ratio
-Function calculateRelativeHumidityFromRatio(dryBulbTemp, humidityRatio, pressure)
-    Dim partialVaporPressure, saturationPressure, result
-
-    partialVaporPressure = calculatePartialVaporPressure(pressure, humidityRatio)
-    saturationPressure = calculateSaturationPressure(dryBulbTemp)
-    result = partialVaporPressure / saturationPressure
-
-    calculateRelativeHumidityFromRatio = result
+Function RoundUp(number)
+	roundedValue = Int(number + 0.999999999)
+	RoundUp = CStr(roundedValue) & ".0"
 End Function
 
-' Function to calculate enthalpy of moist air given dry bulb temperature and humidity ratio
-Function calculateEnthalpy(dryBulbTemp, humidityRatio)
-    calculateEnthalpy = 1.006 * dryBulbTemp + humidityRatio * (2501 + 1.86 * dryBulbTemp)
+Function numPad(number)
+	numPad = FormatNumber(number, 1)
 End Function
-
-' Function to calculate dry bulb temperature from enthalpy and humidity ratio
-Function calculateDryBulbTemperature(enthalpy, humidityRatio)
-    calculateDryBulbTemperature = (enthalpy - (2501 * humidityRatio)) / (1.006 + (1.86 * humidityRatio))
-End Function
-
-' Function to compute the dew point temperature
-Function calculateDewPoint(pressure, humidityRatio)
-    Dim C14, C15, C16, C17, C18, partialVaporPressure, alpha, dewPoint1, dewPoint2, result
-
-    C14 = 6.54
-    C15 = 14.526
-    C16 = 0.7389
-    C17 = 0.09486
-    C18 = 0.4569
-
-    partialVaporPressure = calculatePartialVaporPressure(pressure, humidityRatio)
-    alpha = Log(partialVaporPressure)
-    dewPoint1 = C14 + C15 * alpha + C16 * alpha ^ 2 + C17 * alpha ^ 3 + C18 * partialVaporPressure ^ 0.1984
-    dewPoint2 = 6.09 + 12.608 * alpha + 0.4959 * alpha ^ 2
-
-    If dewPoint1 >= 0 Then
-        result = dewPoint1
-    Else
-        result = dewPoint2
-    End If
-
-    calculateDewPoint = result
-End Function
-
-' Function to compute the dry air density given pressure, temperature, and humidity ratio
-Function calculateDryAirDensity(pressure, dryBulbTemp, humidityRatio)
-    Dim gasConstantDryAir, result
-
-    gasConstantDryAir = 287.055
-    result = 1000 * pressure / (gasConstantDryAir * (273.15 + dryBulbTemp) * (1 + 1.6078 * humidityRatio))
-
-    calculateDryAirDensity = result
-End Function
-
-' Function to convert absolute humidity to relative humidity
-Function convertAbsoluteToRelativeHumidity(dryBulbTemp, absoluteHumidity, pressure)
-    If IsNumeric(absoluteHumidity) Then
-        Dim saturationVaporPressure, saturationAbsoluteHumidity
-
-        saturationVaporPressure = calculateSaturationVaporPressure(dryBulbTemp)
-        saturationAbsoluteHumidity = 0.622 * saturationVaporPressure / (pressure - saturationVaporPressure)
-
-        convertAbsoluteToRelativeHumidity = absoluteHumidity / saturationAbsoluteHumidity * 100
-    End If
-End Function
-
-' Function to calculate total cooling
-Function calculateTotalCooling(dryBulbTemp, humidityRatio, pressure)
-    Dim initialEnthalpy, finalEnthalpy, finalDryBulbTemp, finalHumidityRatio
-
-    initialEnthalpy = calculateEnthalpy(dryBulbTemp, humidityRatio)
-
-    ' Assuming the required final state values are provided
-    ' Replace the placeholders with actual values
-    finalDryBulbTemp = U18 ' Placeholder value
-    finalHumidityRatio = U20 ' Placeholder value
-
-    finalEnthalpy = calculateEnthalpy(finalDryBulbTemp, finalHumidityRatio)
-    calculateTotalCooling = finalEnthalpy - initialEnthalpy
-End Function
-
-' Psychrometric function to calculate various properties
-Function calculatePsychrometricProperties(pressure, inputType1, inputValue1, inputType2, inputValue2, outputType, Optional unitType As String = "Imp")
-    Dim dryBulbTemp, wetBulbTemp, dewPoint, relativeHumidity, humidityRatio, enthalpy, outputValue
-
-    If inputType1 <> "h" And inputType1 <> "W" And inputType1 <> "Tdb" Then
-        calculatePsychrometricProperties = "NAN"
-        Exit Function
-    End If
-
-    If inputType1 = inputType2 Then
-        calculatePsychrometricProperties = "NAN"
-        Exit Function
-    End If
-
-    ' Convert to SI units if necessary
-    If unitType = "SI" Then
-        pressure = pressure / 1000
-
-        If inputType1 = "Tdb" Then
-            dryBulbTemp = inputValue1
-        ElseIf inputType1 = "W" Then
-            humidityRatio = inputValue1
-        ElseIf inputType1 = "h" Then
-            enthalpy = inputValue1
-        End If
-
-        If inputType2 = "Tdb" Then
-            dryBulbTemp = inputValue2
-        ElseIf inputType2 = "Twb" Then
-            wetBulbTemp = inputValue2
-        ElseIf inputType2 = "DP" Then
-            dewPoint = inputValue2
-        ElseIf inputType2 = "RH" Then
-            relativeHumidity = inputValue2
-        ElseIf inputType2 = "W" Then
-            humidityRatio = inputValue2
-        ElseIf inputType2 = "h" Then
-            enthalpy = inputValue2
-        End If
-    Else
-        ' Convert to SI units
-        pressure = (pressure * 4.4482216152605) / (0.0254 ^ 2 * 1000)
-
-        If inputType1 = "Tdb" Then
-            dryBulbTemp = (inputValue1 - 32) / 1.8
-        ElseIf inputType1 = "W" Then
-            humidityRatio = inputValue1
-        ElseIf inputType1 = "h" Then
-            enthalpy = ((inputValue1 * 1.055056) / 0.45359237) - 17.884444444
-        End If
-
-        If inputType2 = "Tdb" Then
-            dryBulbTemp = (inputValue2 - 32) / 1.8
-        ElseIf inputType2 = "Twb" Then
-            wetBulbTemp = (inputValue2 - 32) / 1.8
-        ElseIf inputType2 = "DP" Then
-            dewPoint = (inputValue2 - 32) / 1.8
-        ElseIf inputType2 = "RH" Then
-            relativeHumidity = inputValue2
-        ElseIf inputType2 = "W" Then
-            humidityRatio = inputValue2
-        ElseIf inputType2 = "h" Then
-            enthalpy = ((inputValue2 * 1.055056) / 0.45359237) - 17.884444444
-        End If
-    End If
-
-    If (inputType1 = "h" And inputType2 = "W") Or (inputType1 = "W" And inputType2 = "h") Then
-        dryBulbTemp = calculateDryBulbTemperature(enthalpy, humidityRatio)
-    End If
-
-    ' Determine output based on requested output type
-    If outputType = "RH" Or outputType = "Twb" Then
-        If inputType2 = "Twb" Then
-            relativeHumidity = calculateRelativeHumidity(dryBulbTemp, wetBulbTemp, pressure)
-        ElseIf inputType2 = "DP" Then
-            relativeHumidity = calculateSaturationPressure(dewPoint) / calculateSaturationPressure(dryBulbTemp)
-        ElseIf inputType2 = "W" Then
-            relativeHumidity = calculatePartialVaporPressure(pressure, humidityRatio) / calculateSaturationPressure(dryBulbTemp)
-        ElseIf inputType2 = "h" Then
-            humidityRatio = (1.006 * dryBulbTemp - enthalpy) / (-(2501 + 1.86 * dryBulbTemp))
-            relativeHumidity = calculatePartialVaporPressure(pressure, humidityRatio) / calculateSaturationPressure(dryBulbTemp)
-        End If
-    Else
-        If inputType1 <> "W" Then
-            If inputType2 = "Twb" Then
-                humidityRatio = calculateHumidityRatioFromWetBulb(dryBulbTemp, wetBulbTemp, pressure)
-            ElseIf inputType2 = "DP" Then
-                humidityRatio = 0.621945 * calculateSaturationPressure(dewPoint) / (pressure - calculateSaturationPressure(dewPoint))
-            ElseIf inputType2 = "RH" Then
-                humidityRatio = calculateHumidityRatio(dryBulbTemp, relativeHumidity, pressure)
-            ElseIf inputType2 = "h" Then
-                humidityRatio = (1.006 * dryBulbTemp - enthalpy) / (-(2501 + 1.86 * dryBulbTemp))
-            End If
-        End If
-    End If
-
-    ' Assign the final output value based on output type
-    Select Case outputType
-        Case "Tdb"
-            outputValue = dryBulbTemp
-        Case "Twb"
-            outputValue = wetBulbTemperature(dryBulbTemp, relativeHumidity, pressure)
-        Case "DP"
-            outputValue = calculateDewPoint(pressure, humidityRatio)
-        Case "RH"
-            outputValue = relativeHumidity
-        Case "W"
-            outputValue = humidityRatio
-        Case "WVP"
-            outputValue = calculatePartialVaporPressure(pressure, humidityRatio) * 1000
-        Case "DSat"
-            outputValue = humidityRatio / calculateHumidityRatio(dryBulbTemp, 1, pressure)
-        Case "h"
-            outputValue = calculateEnthalpy(dryBulbTemp, humidityRatio)
-        Case "s"
-            ' No equation for entropy; induce an error
-            outputValue = 5 / 0
-        Case "SV"
-            outputValue = 1 / (calculateDryAirDensity(pressure, dryBulbTemp, humidityRatio))
-        Case "MAD"
-            outputValue = calculateDryAirDensity(pressure, dryBulbTemp, humidityRatio) * (1 + humidityRatio)
-    End Select
-
-    ' Convert to Imperial units if required
-    If unitType = "Imp" Then
-        Select Case outputType
-            Case "Tdb", "Twb", "DP"
-                outputValue = 1.8 * outputValue + 32
-            Case "WVP"
-                outputValue = outputValue * 0.0254 ^ 2 / 4.448230531
-            Case "h"
-                outputValue = (outputValue + 17.88444444444) * 0.45359237 / 1.055056
-            Case "SV"
-                outputValue = outputValue * 0.45359265 / ((12 * 0.0254) ^ 3)
-            Case "MAD"
-                outputValue = outputValue * (12 * 0.0254) ^ 3 / 0.45359265
-        End Select
-    End If
-
-    calculatePsychrometricProperties = outputValue
-End Function
-
-' Custom logarithm function using series expansion
-Function customLog(x)
-    Dim result, y, power, term, n, maxIterations
-
-    maxIterations = 100
-    y = (x - 1) / (x + 1)
-    result = 0
-    power = y
-    term = 2 * power / 1
-
-    For n = 1 To maxIterations
-        result = result + term
-        power = power * y * y
-        term = 2 * power / (2 * n + 1)
-    Next
-
-    customLog = result
-End Function
-
-' Function to round a number to one decimal place
-Function roundToOneDecimal(number)
-    roundToOneDecimal = Int(number * 10 + 0.5) / 10
-End Function
-
-' Function to calculate dew point
-Function calculateDewPointTemperature(dryBulbTemp, humidity)
-    Dim tempCelsius
-    tempCelsius = (dryBulbTemp - 32) * 5 / 9
-    calculateDewPointTemperature = roundToOneDecimal(((tempCelsius - ((100 - humidity) / 5)) * 1.8) + 32)
-End Function
-
-' Function to round up a number
-Function roundUp(number)
-    roundedValue = Int(number + 0.999999999)
-    roundUp = CStr(roundedValue) & ".0"
-End Function
-
-' Function to format a number with one decimal place
-Function formatNumberWithDecimal(number)
-    formatNumberWithDecimal = FormatNumber(number, 1)
-End Function
-
-' Sleep function placeholder (uncomment WScript.Sleep if required)
-Sub sleep(milliseconds)
-    'WScript.Sleep(milliseconds)
+' Create a sleep function
+Sub sleep(x)
+	'WScript.Sleep(x)
 End Sub
 
-' Function to change control settings
-' statusField: the override checkbox
-' controlField: the control to be adjusted
-' setpoint: the new setpoint value
-' mode: "manual" or "auto" mode
-Sub changeControlSettings(statusField, controlField, setpoint, mode)
-    Dim formattedSetpoint
-    formattedSetpoint = formatNumberWithDecimal(setpoint)
-
-    If mode = "manual" Then
-        If statusField.value <> True Then
-            statusField.value = True
-            If controlField.value <> formattedSetpoint Then
-                controlField.value = formattedSetpoint
-                controlField.linecolor = RGB(0, 255, 0)
-                sleep(sleepDuration)
-            End If
-        Else
-            If controlField.value <> formattedSetpoint Then
-                controlField.value = formattedSetpoint
-                controlField.linecolor = RGB(0, 255, 0)
-                'sleep(sleepDuration)
-            End If
-        End If
-    Else
-        If statusField.value = True Then
-            statusField.value = False
-            sleep(sleepDuration)
-        End If
-    End If
+' Function to change control settings\
+' status is the override checkbox
+' control is the name of the control
+' sp is the setting to change to
+' mode is what mode we want, auto or manual
+Sub changeControl(status, control, sp, mode)
+	Dim Setpoint
+	Setpoint = numPad(sp)
+	If mode = "manual" Then
+		If status.value <> True Then
+			status.value = True
+			If control.value <> Setpoint Then
+				control.value = Setpoint 
+				control.linecolor = RGB(0,255,0)
+				sleep(sleepX)
+			End If
+		Else
+			If control.value <> Setpoint Then
+				control.value = Setpoint 
+				control.linecolor = RGB(0,255,0)
+				'sleep(sleepX)
+			End If
+		End If
+	' If mode is "Auto", check to see if we are in "manual"
+	' If we are in manual ,change to auto.
+	Else 
+		If status.value = True Then
+			status.value = False
+			sleep(sleepX)
+		End If
+	End If
 End Sub
-
 ' Cooling scenario A
-Sub executeCoolingScenario(raDamper1, raDamper2, oaDamper1, oaDamper2, blowerControl1, blowerControl2, hv4Damper, rhSp1, rhSp2, clgSp1, clgSp2, htgSp1, htgSp2)
-    changeControlSettings ahu1RAdamperMode, ahu1RAdamper, raDamper1, "manual"
-    changeControlSettings ahu2RAdamperMode, ahu2RAdamper, raDamper2, "manual"
-    changeControlSettings ahu1OAdamperMode, ahu1OAdamper, oaDamper1, "manual"
-    changeControlSettings ahu2OAdamperMode, ahu2OAdamper, oaDamper2, "manual"
-    changeControlSettings ahu1BlowerMode, ahu1BlowerControl, blowerControl1, "manual"
-    changeControlSettings ahu2BlowerMode, ahu2BlowerControl, blowerControl2, "manual"
-    changeControlSettings hv4DamperMode, hv4MAdamper, hv4Damper, "manual"
-    changeControlSettings ahu1RhSpMode, ahu1RhSp, rhSp1, "manual"
-    changeControlSettings ahu2RhSpMode, ahu2RhSp, rhSp2, "manual"
-    changeControlSettings ahu1ClgSpMode, ahu1ClgSp, clgSp1, "manual"
-    changeControlSettings ahu2ClgSpMode, ahu2ClgSp, clgSp2, "manual"
-    changeControlSettings ahu1HtgSpMode, ahu1HtgSp, htgSp1, "manual"
-    changeControlSettings ahu2HtgSpMode, ahu2HtgSp, htgSp2, "manual"
+Sub ScenarioA(raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp)
+	changeControl ahu1RAdamperMode, ahu1RAdamper, raDamper1, "manual"
+	changeControl ahu2RAdamperMode, ahu2RAdamper, raDamper2, "manual"
+	changeControl ahu1OAdamperMode, ahu1OAdamper, oaDamper1, "manual"
+	changeControl ahu2OAdamperMode, ahu2OAdamper, oaDamper2, "manual"
+	If nosp = True Then
+		changeControl ahu1BlowerMode, ahu1BlowerControl, blowerControl1, "manual"
+		changeControl ahu2BlowerMode, ahu2BlowerControl, blowerControl2, "manual"
+	End If
+	changeControl hv4DamperMode, hv4MAdamper, hv4Damper, "manual"
+	changeControl ahu1RhSpMode, ahu1RhSp, rhSp1, "manual"
+	changeControl ahu2RhSpMode, ahu2RhSp, rhSp2, "manual"
+	changeControl ahu1ClgSpMode, ahu1ClgSp, clgSp1, "manual"
+	changeControl ahu2ClgSpMode, ahu2ClgSp, clgSp2, "manual"
+	changeControl ahu1HtgSpMode, ahu1HtgSp, htgSp1, "manual"
+	changeControl ahu2HtgSpMode, ahu2HtgSp, htgSp2, "manual"
+
 End Sub
+Function condA( )
+			dataWindow.value = "Cooling - Extreme Load"
+			raDamper1 = 40
+			raDamper2 = 40
+			oaDamper1 = 45
+			oaDamper2 = 45
+			blowerControl1 = 95
+			blowerControl2 = 95
+			If outsideTemp.value > alphanum3.value Then 
+				hv4Damper = 50 
+			}
+			Else
+				hv4Damper = 50
+			End If
+			rhSp1 = 55
+			rhSp2 = 55
+			clgSp1 = 55
+			clgSp2 = 55
+			htgSp1 = 55
+			htgSp2 = 55
+			nosp = True
+			ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+End Function
+Function condA_1( )
+			dataWindow.value = "Cooling - Extreme Load"
+			raDamper1 = 41
+			raDamper2 = 41
+			oaDamper1 = 46
+			oaDamper2 = 46
+			blowerControl1 = 98
+			blowerControl2 = 98
+			If outsideTemp.value > alphanum3.value Then 
+				hv4Damper = 50 
+			}
+			Else
+				hv4Damper = 50
+			End If
+			rhSp1 = 55
+			rhSp2 = 55
+			clgSp1 = 55
+			clgSp2 = 55
+			htgSp1 = 55
+			htgSp2 = 55
+			nosp = True
+			ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+End Function
+Function condA_2( )
+			dataWindow.value = "Cooling - Extreme Load"
+			raDamper1 = 42
+			raDamper2 = 42
+			oaDamper1 = 47
+			oaDamper2 = 47
+			blowerControl1 = 98
+			blowerControl2 = 98
+			If outsideTemp.value > alphanum3.value Then 
+				hv4Damper = 50 
+			}
+			Else
+				hv4Damper = 50
+			End If
+			rhSp1 = 55
+			rhSp2 = 55
+			clgSp1 = 55
+			clgSp2 = 55
+			htgSp1 = 55
+			htgSp2 = 55
+			nosp = True
+			ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+End Function
+Function condA_3( )
+			dataWindow.value = "Cooling - Extreme Load"
+			raDamper1 = 43
+			raDamper2 = 43
+			oaDamper1 = 48
+			oaDamper2 = 48
+			blowerControl1 = 98
+			blowerControl2 = 98
+			If outsideTemp.value > alphanum3.value Then 
+				hv4Damper = 50 
+			}
+			Else
+				hv4Damper = 50
+			End If
+			rhSp1 = 55
+			rhSp2 = 55
+			clgSp1 = 55
+			clgSp2 = 55
+			htgSp1 = 55
+			htgSp2 = 55
+			nosp = True
+			ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+End Function
+Function condA_4( )
+			dataWindow.value = "Cooling - Extreme Load"
+			raDamper1 = 44
+			raDamper2 = 44
+			oaDamper1 = 49
+			oaDamper2 = 49
+			blowerControl1 = 98
+			blowerControl2 = 98
+			If outsideTemp.value > alphanum3.value Then 
+				hv4Damper = 50 
+			}
+			Else
+				hv4Damper = 50
+			End If
+			rhSp1 = 55
+			rhSp2 = 55
+			clgSp1 = 55
+			clgSp2 = 55
+			htgSp1 = 55
+			htgSp2 = 55
+			nosp = True
+			ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+End Function
+Function condB ( )
+			dataWindow.value = "Cooling - Heavy Load"
+			raDamper1 = 45
+			raDamper2 = 45
+			oaDamper1 = 50
+			oaDamper2 = 50
+			blowerControl1 = 98
+			blowerControl2 = 98
+			If outsideTemp.value > alphanum3.value Then 
+				hv4Damper = 50 
+			}
+			Else
+				hv4Damper = 50
+			End If
+			rhSp1 = 55
+			rhSp2 = 55
+			clgSp1 = 55
+			clgSp2 = 55
+			htgSp1 = 55
+			htgSp2 = 55
+			nosp = True
+			ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+End Function
+Function condB_1 ( )
+			dataWindow.value = "Cooling - Heavy Load"
+			raDamper1 = 44
+			raDamper2 = 44
+			oaDamper1 = 51
+			oaDamper2 = 51
+			blowerControl1 = 98
+			blowerControl2 = 98
+			If outsideTemp.value > alphanum3.value Then 
+				hv4Damper = 50 
+			}
+			Else
+				hv4Damper = 50
+			End If
+			rhSp1 = 55
+			rhSp2 = 55
+			clgSp1 = 55
+			clgSp2 = 55
+			htgSp1 = 55
+			htgSp2 = 55
+			nosp = True
+			ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+End Function
+Function condB_2 ( )
+			dataWindow.value = "Cooling - Heavy Load"
+			raDamper1 = 43
+			raDamper2 = 43
+			oaDamper1 = 52
+			oaDamper2 = 52
+			blowerControl1 = 98
+			blowerControl2 = 98
+			If outsideTemp.value > alphanum3.value Then 
+				hv4Damper = 50 
+			}
+			Else
+				hv4Damper = 50
+			End If
+			rhSp1 = 55
+			rhSp2 = 55
+			clgSp1 = 55
+			clgSp2 = 55
+			htgSp1 = 55
+			htgSp2 = 55
+			nosp = True
+			ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+End Function
+Function condB_3 ( )
+			dataWindow.value = "Cooling - Heavy Load"
+			raDamper1 = 42
+			raDamper2 = 42
+			oaDamper1 = 53
+			oaDamper2 = 53
+			blowerControl1 = 98
+			blowerControl2 = 98
+			If outsideTemp.value > alphanum3.value Then 
+				hv4Damper = 50 
+			}
+			Else
+				hv4Damper = 50
+			End If
+			rhSp1 = 55
+			rhSp2 = 55
+			clgSp1 = 55
+			clgSp2 = 55
+			htgSp1 = 55
+			htgSp2 = 55
+			nosp = True
+			ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+End Function
+Function condB_4 ( )
+			dataWindow.value = "Cooling - Heavy Load"
+			raDamper1 = 41
+			raDamper2 = 41
+			oaDamper1 = 54
+			oaDamper2 = 54
+			blowerControl1 = 98
+			blowerControl2 = 98
+			If outsideTemp.value > alphanum3.value Then 
+				hv4Damper = 50 
+			}
+			Else
+				hv4Damper = 50
+			End If
+			rhSp1 = 55
+			rhSp2 = 55
+			clgSp1 = 55
+			clgSp2 = 55
+			htgSp1 = 55
+			htgSp2 = 55
+			nosp = True
+			ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+End Function
+Function condC ( )
+			dataWindow.value = "Cooling Mode"
+			raDamper1 = 40
+			raDamper2 = 40
+			oaDamper1 = 55
+			oaDamper2 = 55
+			blowerControl1 = 98
+			blowerControl2 = 98
+			If outsideTemp.value > alphanum3.value Then 
+				hv4Damper = 50 
+			}
+			Else
+				hv4Damper = 50
+			End If
+			rhSp1 = 55
+			rhSp2 = 55
+			clgSp1 = 55
+			clgSp2 = 55
+			htgSp1 = 55
+			htgSp2 = 55
+			nosp = True
+			ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+End Function
+Function condC_1 ( )
+			dataWindow.value = "Cooling Mode"
+			raDamper1 = 41
+			raDamper2 = 41
+			oaDamper1 = 55
+			oaDamper2 = 55
+			blowerControl1 = 98
+			blowerControl2 = 98
+			If outsideTemp.value > alphanum3.value Then 
+				hv4Damper = 50 
+			}
+			Else
+				hv4Damper = 50
+			End If
+			rhSp1 = 55
+			rhSp2 = 55
+			clgSp1 = 55
+			clgSp2 = 55
+			htgSp1 = 55
+			htgSp2 = 55
+			nosp = True
+			ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+End Function
+Function condC_2 ( )
+			dataWindow.value = "Cooling Mode"
+			raDamper1 = 42
+			raDamper2 = 42
+			oaDamper1 = 55
+			oaDamper2 = 55
+			blowerControl1 = 98
+			blowerControl2 = 98
+			If outsideTemp.value > alphanum3.value Then 
+				hv4Damper = 50 
+			}
+			Else
+				hv4Damper = 50
+			End If
+			rhSp1 = 55
+			rhSp2 = 55
+			clgSp1 = 55
+			clgSp2 = 55
+			htgSp1 = 55
+			htgSp2 = 55
+			nosp = True
+			ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+End Function
+Function condC_3 ( )
+			dataWindow.value = "Cooling Mode"
+			raDamper1 = 43
+			raDamper2 = 43
+			oaDamper1 = 55
+			oaDamper2 = 55
+			blowerControl1 = 98
+			blowerControl2 = 98
+			If outsideTemp.value > alphanum3.value Then 
+				hv4Damper = 50 
+			}
+			Else
+				hv4Damper = 50
+			End If
+			rhSp1 = 55
+			rhSp2 = 55
+			clgSp1 = 55
+			clgSp2 = 55
+			htgSp1 = 55
+			htgSp2 = 55
+			nosp = True
+			ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+End Function
+Function condC_4 ( )
+			dataWindow.value = "Cooling Mode"
+			raDamper1 = 44
+			raDamper2 = 44
+			oaDamper1 = 55
+			oaDamper2 = 55
+			blowerControl1 = 98
+			blowerControl2 = 98
+			If outsideTemp.value > alphanum3.value Then 
+				hv4Damper = 50 
+			}
+			Else
+				hv4Damper = 50
+			End If
+			rhSp1 = 55
+			rhSp2 = 55
+			clgSp1 = 55
+			clgSp2 = 55
+			htgSp1 = 55
+			htgSp2 = 55
+			nosp = True
+			ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+End Function
+Function condD ( )
+			dataWindow.value = "Cooling Mode"
+			raDamper1 = 45
+			raDamper2 = 45
+			oaDamper1 = 55
+			oaDamper2 = 55
+			blowerControl1 = 98
+			blowerControl2 = 98
+			If outsideTemp.value > alphanum3.value Then 
+				hv4Damper = 50 
+			}
+			Else
+				hv4Damper = 100
+			End If
+			rhSp1 = 55
+			rhSp2 = 55
+			clgSp1 = 55
+			clgSp2 = 55
+			htgSp1 = 55
+			htgSp2 = 55
+			nosp = True
+			ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+End Function
+Function condD_1 ( )
+			dataWindow.value = "Cooling Mode"
+			raDamper1 = 46
+			raDamper2 = 46
+			oaDamper1 = 55
+			oaDamper2 = 55
+			blowerControl1 = 98
+			blowerControl2 = 98
+			If outsideTemp.value > alphanum3.value Then 
+				hv4Damper = 50 
+			}
+			Else
+				hv4Damper = 100
+			End If
+			rhSp1 = 55
+			rhSp2 = 55
+			clgSp1 = 55
+			clgSp2 = 55
+			htgSp1 = 55
+			htgSp2 = 55
+			nosp = True
+			ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+End Function
+Function condD_2 ( )
+			dataWindow.value = "Cooling Mode"
+			raDamper1 = 47
+			raDamper2 = 47
+			oaDamper1 = 55
+			oaDamper2 = 55
+			blowerControl1 = 98
+			blowerControl2 = 98
+			If outsideTemp.value > alphanum3.value Then 
+				hv4Damper = 50 
+			}
+			Else
+				hv4Damper = 100
+			End If
+			rhSp1 = 55
+			rhSp2 = 55
+			clgSp1 = 55
+			clgSp2 = 55
+			htgSp1 = 55
+			htgSp2 = 55
+			nosp = True
+			ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+End Function
+Function condD_3 ( )
+			dataWindow.value = "Cooling Mode"
+			raDamper1 = 48
+			raDamper2 = 48
+			oaDamper1 = 55
+			oaDamper2 = 55
+			blowerControl1 = 98
+			blowerControl2 = 98
+			If outsideTemp.value > alphanum3.value Then 
+				hv4Damper = 50 
+			}
+			Else
+				hv4Damper = 100
+			End If
+			rhSp1 = 55
+			rhSp2 = 55
+			clgSp1 = 55
+			clgSp2 = 55
+			htgSp1 = 55
+			htgSp2 = 55
+			nosp = True
+			ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+End Function
+
+Function condD_4 ( )
+			dataWindow.value = "Cooling Mode"
+			raDamper1 = 49
+			raDamper2 = 49
+			oaDamper1 = 55
+			oaDamper2 = 55
+			blowerControl1 = 98
+			blowerControl2 = 98
+			If outsideTemp.value > alphanum3.value Then 
+				hv4Damper = 50 
+			}
+			Else
+				hv4Damper = 100
+			End If
+			rhSp1 = 55
+			rhSp2 = 55
+			clgSp1 = 55
+			clgSp2 = 55
+			htgSp1 = 55
+			htgSp2 = 55
+			nosp = True
+			ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+End Function
+
+Function condE ( )
+				dataWindow.value = "Free Cooling Mode"
+				raDamper1 = 95
+				raDamper2 = 95
+				oaDamper1 = 100
+				oaDamper2 = 100
+				blowerControl1 = 98
+				blowerControl2 = 98
+				hv4Damper = 100
+				rhSp1 = 35
+				rhSp2 = 35
+				clgSp1 = 55
+				clgSp2 = 55
+				htgSp1 = 55
+				htgSp2 = 55
+				nosp = True
+				ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+End Function
+Function condF ( )
+				dataWindow.value = "Cooling - Low Load"
+				raDamper1 = 50
+				raDamper2 = 50
+				oaDamper1 = 55
+				oaDamper2 = 55
+				blowerControl1 = 98
+				blowerControl2 = 98
+				hv4Damper = 100
+				rhSp1 = 55
+				rhSp2 = 55
+				clgSp1 = 55
+				clgSp2 = 55
+				htgSp1 = 55
+				htgSp2 = 55
+				nosp = True
+				ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+End Function
+Function condG ( )
+				dataWindow.value = "Free Cooling Mode"
+				raDamper1 = 85
+				raDamper2 = 85
+				oaDamper1 = 100
+				oaDamper2 = 100
+				blowerControl1 = 88
+				blowerControl2 = 88
+				hv4Damper = 50
+				rhSp1 = 35
+				rhSp2 = 35
+				clgSp1 = 53
+				clgSp2 = 53
+				htgSp1 = 53
+				htgSp2 = 53
+				nosp = True
+				ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+End Function
+Function condH ( )
+				dataWindow.value = "Cooling -  Extreme Low load"
+				raDamper1 = 40
+				raDamper2 = 40
+				oaDamper1 = 40
+				oaDamper2 = 40
+				blowerControl1 = 98
+				blowerControl2 = 98
+				hv4Damper = 50
+				rhSp1 = 50
+				rhSp2 = 50
+				clgSp1 = 55
+				clgSp2 = 55
+				htgSp1 = 53
+				htgSp2 = 53
+				nosp = True
+				ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+End Function
+Function condI ( )
+				dataWindow.value = "Free Cooling Mode"
+				raDamper1 = 65
+				raDamper2 = 65
+				oaDamper1 = 100
+				oaDamper2 = 100
+				If spMaintain.value = True Then
+					Call StaticPressureEast(currentMinutes)
+					Call StaticPressureWest(currentMinutes)
+					nosp = False
+				Else
+					nosp = True
+				End If
+				blowerControl1 = 82
+				blowerControl2 = 82
+				hv4Damper = 50
+				rhSp1 =  35
+				rhSp2 = 35
+				clgSp1 = 55
+				clgSp2 = 55
+				htgSp1 = 53
+				htgSp2 = 53
+				ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+End Function
+Function condJ ( )
+				dataWindow.value = "Cooling -  Extreme Low load"
+				raDamper1 = 40
+				raDamper2 = 40
+				oaDamper1 = 40
+				oaDamper2 = 40
+				blowerControl1 = 95
+				blowerControl2 = 95
+				hv4Damper = 50
+				rhSp1 = 50
+				rhSp2 = 50
+				clgSp1 = 55
+				clgSp2 = 55
+				htgSp1 = 53
+				htgSp2 = 53
+				nosp = True
+				ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+End Function
+Function condK ( )
+				raDamper1 = 50
+				raDamper2 = 50
+				oaDamper1 = 100
+				oaDamper2 = 100
+				If spMaintain.value = True Then
+					Call StaticPressureEast(currentMinutes)
+					Call StaticPressureWest(currentMinutes)
+					nosp = False
+				Else
+					nosp = True
+				End If
+				blowerControl1 = 82
+				blowerControl2 = 82
+				hv4Damper = 50
+				rhSp1 =  HumidityAdjust( outsideTemp.value )
+				rhSp2 = HumidityAdjust( outsideTemp.value )
+				clgSp1 = 55
+				clgSp2 = 55
+				htgSp1 = 55
+				htgSp2 = 55
+				ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+End Function
+Function condL ( )
+				raDamper1 = 50
+				raDamper2 = 50
+				oaDamper1 = 70
+				oaDamper2 = 70
+				If spMaintain.value = True Then
+					Call StaticPressureEast(currentMinutes)
+					Call StaticPressureWest(currentMinutes)
+					nosp = False
+				Else
+					nosp = True
+				End If
+				blowerControl1 = 82
+				blowerControl2 = 82
+				hv4Damper = 60
+				rhSp1 =  HumidityAdjust( outsideTemp.value )
+				rhSp2 = HumidityAdjust( outsideTemp.value )
+				clgSp1 = 55
+				clgSp2 = 55
+				htgSp1 = 55
+				htgSp2 = 55
+				ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+End Function
+Function condM ( )
+				raDamper1 = 50
+				raDamper2 = 50
+				oaDamper1 = 65
+				oaDamper2 = 65
+				If spMaintain.value = True Then
+					Call StaticPressureEast(currentMinutes)
+					Call StaticPressureWest(currentMinutes)
+					nosp = False
+				Else
+					nosp = True
+				End If
+				blowerControl1 = 82
+				blowerControl2 = 82
+				hv4Damper = 60
+				rhSp1 =  HumidityAdjust( outsideTemp.value )
+				rhSp2 = HumidityAdjust( outsideTemp.value )
+				clgSp1 = 55
+				clgSp2 = 55
+				htgSp1 = 58
+				htgSp2 = 58
+				ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+End Function
+Function condN ( )
+				raDamper1 = 50
+				raDamper2 = 50
+				oaDamper1 = 60
+				oaDamper2 = 60
+				If spMaintain.value = True Then
+					Call StaticPressureEast(currentMinutes)
+					Call StaticPressureWest(currentMinutes)
+					nosp = False
+				Else
+					nosp = True
+				End If
+				blowerControl1 = 88
+				blowerControl2 = 88
+				hv4Damper = 60
+				rhSp1 =  HumidityAdjust( outsideTemp.value )
+				rhSp2 = HumidityAdjust( outsideTemp.value )
+				clgSp1 = 55
+				clgSp2 = 55
+				htgSp1 = 60
+				htgSp2 = 60
+				ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+End Function
+Function condO ( )
+				raDamper1 = 50
+				raDamper2 = 50
+				oaDamper1 = 55
+				oaDamper2 = 55
+				If spMaintain.value = True Then
+					Call StaticPressureEast(currentMinutes)
+					Call StaticPressureWest(currentMinutes)
+					nosp = False
+				Else
+					nosp = True
+				End If
+				blowerControl1 = 88
+				blowerControl2 = 88
+				hv4Damper = 60
+				rhSp1 =  HumidityAdjust( outsideTemp.value )
+				rhSp2 = HumidityAdjust( outsideTemp.value )
+				clgSp1 = 55
+				clgSp2 = 55
+				htgSp1 = 60
+				htgSp2 = 60
+				ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+End Function
+Function condP ( )
+				raDamper1 = 50
+				raDamper2 = 50
+				oaDamper1 = 50
+				oaDamper2 = 50
+				If spMaintain.value = True Then
+					Call StaticPressureEast(currentMinutes)
+					Call StaticPressureWest(currentMinutes)
+					nosp = False
+				Else
+					nosp = True
+				End If
+				blowerControl1 = 86
+				blowerControl2 = 86
+				hv4Damper = 60
+				rhSp1 =  HumidityAdjust( outsideTemp.value )
+				rhSp2 = HumidityAdjust( outsideTemp.value )
+				clgSp1 = 55
+				clgSp2 = 55
+				htgSp1 = 60
+				htgSp2 = 60
+				ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+End Function
+Function condQ ( )
+				raDamper1 = 45
+				raDamper2 =45
+				oaDamper1 = 45
+				oaDamper2 = 45
+				If spMaintain.value = True Then
+					Call StaticPressureEast(currentMinutes)
+					Call StaticPressureWest(currentMinutes)
+					nosp = False
+				Else
+					nosp = True
+				End If
+				blowerControl1 = 84
+				blowerControl2 = 84
+				hv4Damper = 60
+				rhSp1 =  HumidityAdjust( outsideTemp.value )
+				rhSp2 = HumidityAdjust( outsideTemp.value )
+				clgSp1 = 55
+				clgSp2 = 55
+				htgSp1 = 60
+				htgSp2 = 60
+				ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+End Function
+Function condR ( )
+				raDamper1 = 45
+				raDamper2 = 45
+				oaDamper1 = 45
+				oaDamper2 = 45
+				If spMaintain.value = True Then
+					Call StaticPressureEast(currentMinutes)
+					Call StaticPressureWest(currentMinutes)
+					nosp = False
+				Else
+					nosp = True
+				End If
+				blowerControl1 = 84
+				blowerControl2 = 84
+				hv4Damper = 60
+				rhSp1 =  HumidityAdjust( outsideTemp.value )
+				rhSp2 = HumidityAdjust( outsideTemp.value )
+				clgSp1 = 55
+				clgSp2 = 55
+				htgSp1 = 60
+				htgSp2 = 60
+				ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+End Function
+Function condS ( )
+				raDamper1 = 45
+				raDamper2 = 45
+				oaDamper1 = 45
+				oaDamper2 = 45
+				If spMaintain.value = True Then
+					Call StaticPressureEast(currentMinutes)
+					Call StaticPressureWest(currentMinutes)
+					nosp = False
+				Else
+					nosp = True
+				End If
+				blowerControl1 = 84
+				blowerControl2 = 84
+				hv4Damper = 60
+				rhSp1 = HumidityAdjust( outsideTemp.value )
+				rhSp2 = HumidityAdjust( outsideTemp.value )
+				clgSp1 = 55
+				clgSp2 = 55
+				htgSp1 = 60
+				htgSp2 = 60
+				ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+End Function
+Function condT ( )
+			raDamper1 = 45
+			raDamper2 = 45
+			oaDamper1 = 45
+			oaDamper2 = 45
+				If spMaintain.value = True Then
+					Call StaticPressureEast(currentMinutes)
+					Call StaticPressureWest(currentMinutes)
+					nosp = False
+				Else
+					nosp = True
+				End If
+			blowerControl1 = 84
+			blowerControl2 = 84
+			hv4Damper = 60
+			rhSp1 = HumidityAdjust( outsideTemp.value )
+			rhSp2 = HumidityAdjust( outsideTemp.value )
+			clgSp1 = 55
+			clgSp2 = 55
+			htgSp1 = 60
+			htgSp2 = 60
+			nosp = True
+			ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+End Function
