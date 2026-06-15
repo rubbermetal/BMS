@@ -281,7 +281,6 @@ Function condA( )
 			blowerControl2 = 95
 			If outsideTemp.value > alphanum3.value Then 
 				hv4Damper = 50 
-			}
 			Else
 				hv4Damper = 50
 			End If
@@ -304,7 +303,6 @@ Function condA_1( )
 			blowerControl2 = 98
 			If outsideTemp.value > alphanum3.value Then 
 				hv4Damper = 50 
-			}
 			Else
 				hv4Damper = 50
 			End If
@@ -327,7 +325,6 @@ Function condA_2( )
 			blowerControl2 = 98
 			If outsideTemp.value > alphanum3.value Then 
 				hv4Damper = 50 
-			}
 			Else
 				hv4Damper = 50
 			End If
@@ -350,7 +347,6 @@ Function condA_3( )
 			blowerControl2 = 98
 			If outsideTemp.value > alphanum3.value Then 
 				hv4Damper = 50 
-			}
 			Else
 				hv4Damper = 50
 			End If
@@ -373,7 +369,6 @@ Function condA_4( )
 			blowerControl2 = 98
 			If outsideTemp.value > alphanum3.value Then 
 				hv4Damper = 50 
-			}
 			Else
 				hv4Damper = 50
 			End If
@@ -396,7 +391,6 @@ Function condB ( )
 			blowerControl2 = 98
 			If outsideTemp.value > alphanum3.value Then 
 				hv4Damper = 50 
-			}
 			Else
 				hv4Damper = 50
 			End If
@@ -419,7 +413,6 @@ Function condB_1 ( )
 			blowerControl2 = 98
 			If outsideTemp.value > alphanum3.value Then 
 				hv4Damper = 50 
-			}
 			Else
 				hv4Damper = 50
 			End If
@@ -442,7 +435,6 @@ Function condB_2 ( )
 			blowerControl2 = 98
 			If outsideTemp.value > alphanum3.value Then 
 				hv4Damper = 50 
-			}
 			Else
 				hv4Damper = 50
 			End If
@@ -465,7 +457,6 @@ Function condB_3 ( )
 			blowerControl2 = 98
 			If outsideTemp.value > alphanum3.value Then 
 				hv4Damper = 50 
-			}
 			Else
 				hv4Damper = 50
 			End If
@@ -488,7 +479,6 @@ Function condB_4 ( )
 			blowerControl2 = 98
 			If outsideTemp.value > alphanum3.value Then 
 				hv4Damper = 50 
-			}
 			Else
 				hv4Damper = 50
 			End If
@@ -511,7 +501,6 @@ Function condC ( )
 			blowerControl2 = 98
 			If outsideTemp.value > alphanum3.value Then 
 				hv4Damper = 50 
-			}
 			Else
 				hv4Damper = 50
 			End If
@@ -534,7 +523,6 @@ Function condC_1 ( )
 			blowerControl2 = 98
 			If outsideTemp.value > alphanum3.value Then 
 				hv4Damper = 50 
-			}
 			Else
 				hv4Damper = 50
 			End If
@@ -557,7 +545,6 @@ Function condC_2 ( )
 			blowerControl2 = 98
 			If outsideTemp.value > alphanum3.value Then 
 				hv4Damper = 50 
-			}
 			Else
 				hv4Damper = 50
 			End If
@@ -580,7 +567,6 @@ Function condC_3 ( )
 			blowerControl2 = 98
 			If outsideTemp.value > alphanum3.value Then 
 				hv4Damper = 50 
-			}
 			Else
 				hv4Damper = 50
 			End If
@@ -603,7 +589,6 @@ Function condC_4 ( )
 			blowerControl2 = 98
 			If outsideTemp.value > alphanum3.value Then 
 				hv4Damper = 50 
-			}
 			Else
 				hv4Damper = 50
 			End If
@@ -626,7 +611,6 @@ Function condD ( )
 			blowerControl2 = 98
 			If outsideTemp.value > alphanum3.value Then 
 				hv4Damper = 50 
-			}
 			Else
 				hv4Damper = 100
 			End If
@@ -649,7 +633,6 @@ Function condD_1 ( )
 			blowerControl2 = 98
 			If outsideTemp.value > alphanum3.value Then 
 				hv4Damper = 50 
-			}
 			Else
 				hv4Damper = 100
 			End If
@@ -672,7 +655,6 @@ Function condD_2 ( )
 			blowerControl2 = 98
 			If outsideTemp.value > alphanum3.value Then 
 				hv4Damper = 50 
-			}
 			Else
 				hv4Damper = 100
 			End If
@@ -695,7 +677,6 @@ Function condD_3 ( )
 			blowerControl2 = 98
 			If outsideTemp.value > alphanum3.value Then 
 				hv4Damper = 50 
-			}
 			Else
 				hv4Damper = 100
 			End If
@@ -719,7 +700,6 @@ Function condD_4 ( )
 			blowerControl2 = 98
 			If outsideTemp.value > alphanum3.value Then 
 				hv4Damper = 50 
-			}
 			Else
 				hv4Damper = 100
 			End If
