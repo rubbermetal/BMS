@@ -185,10 +185,16 @@ Function RoundToOneDecimal(number)
 	RoundToOneDecimal = Int(number * 10 + 0.5) / 10
 End Function
 
+' Dew point (deg F) from dry-bulb (deg F) and RH (percent) via Magnus-Tetens.
 Function calculateDP(T,H)
-	Dim Tc
+	Dim Tc, a, b, gamma, TdC
+	a = 17.27
+	b = 237.7
+	If H < 1 Then H = 1
 	Tc = (T - 32) * 5 / 9
-	calculateDP = RoundToOneDecimal(((Tc  -  ((100 - H) / 5)) * 1.8) + 32)
+	gamma = Log(H / 100) + (a * Tc) / (b + Tc)
+	TdC = (b * gamma) / (a - gamma)
+	calculateDP = RoundToOneDecimal((TdC * 1.8) + 32)
 End Function
 
 Function RoundUp(number)
