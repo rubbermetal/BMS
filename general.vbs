@@ -247,12 +247,12 @@ Function satW(tempF)
 	Pws = Exp(lnPws)
 	satW = 0.621945 * Pws / (Patm - Pws)
 End Function
-' Leaving-air enthalpy (Btu/lb) across a coil. Wet (leaving ~95% RH) when the
+' Leaving-air enthalpy (Btu/lb) across a coil. Wet (leaving ~91% RH) when the
 ' discharge temp is below the entering dew point (satW at discharge < Win);
 ' otherwise dry, so leaving humidity stays at the entering Win (sensible only).
 Function leavingEnthalpy(daTemp, Win)
 	If satW(daTemp) < Win Then
-		leavingEnthalpy = enthalpyIP(daTemp, 95)
+		leavingEnthalpy = enthalpyIP(daTemp, 91)
 	Else
 		leavingEnthalpy = 0.240 * daTemp + Win * (1061 + 0.444 * daTemp)
 	End If
