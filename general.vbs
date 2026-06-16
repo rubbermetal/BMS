@@ -2,7 +2,7 @@ Class ControlField
 	Public value
 End Class
 
-Dim sleepX, control, status, steamPressure
+Dim control, status, steamPressure
 steamPressure = alphanum11.value - 1
 
 Function timeFetch ( )
@@ -267,10 +267,6 @@ Function calculateLoad()
 
 	calculateLoad = Round(load1 + load2, 0)
 End Function
-' Create a sleep function
-Sub sleep(x)
-	'WScript.Sleep(x)
-End Sub
 
 ' Function to change control settings\
 ' status is the override checkbox
@@ -286,13 +282,11 @@ Sub changeControl(status, control, sp, mode)
 			If control.value <> Setpoint Then
 				control.value = Setpoint 
 				control.linecolor = RGB(0,255,0)
-				sleep(sleepX)
 			End If
 		Else
 			If control.value <> Setpoint Then
 				control.value = Setpoint 
 				control.linecolor = RGB(0,255,0)
-				'sleep(sleepX)
 			End If
 		End If
 	' If mode is "Auto", check to see if we are in "manual"
@@ -300,7 +294,6 @@ Sub changeControl(status, control, sp, mode)
 	Else 
 		If status.value = True Then
 			status.value = False
-			sleep(sleepX)
 		End If
 	End If
 End Sub
