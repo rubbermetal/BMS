@@ -359,31 +359,32 @@ Sub applyCoolingRow(r)
 		hv4 = r(4)
 	End If
 	sp = dischargeSp(r(6), r(7))
+	dataWindow.value = r(10)
 	ScenarioA r(1), r(1), r(2), r(2), r(3), r(3), hv4, r(5), r(5), sp, sp, sp, sp, True
 End Sub
 ' Cooling schedule dispatch. Returns True if a row was applied; returns
 ' False ONLY for a chiller-OFF sub-72 band, so the caller runs free cooling.
 ' Row cols: lowBound, RAclosed, OAopen, fan, hv4 (-1 = condD rule:
 ' 50 if OAT>alphanum3 else 100), rhSp, dischHi, dischLo, chillerOnly,
-' inclLowEdge (True = temp >= lowBound, False = temp > lowBound).
+' inclLowEdge (True = temp >= lowBound, False = temp > lowBound), dataWindow label.
 Function dispatchCooling(oat)
 	Dim clgSched(15), i, r, reached
-	clgSched(0)  = Array(92, 40, 45, 98,  50, 55, 55, 55, False, True)
-	clgSched(1)  = Array(91, 41, 46, 98,  50, 55, 55, 55, False, True)
-	clgSched(2)  = Array(90, 42, 47, 98,  50, 55, 55, 55, False, True)
-	clgSched(3)  = Array(89, 43, 48, 98,  50, 55, 55, 55, False, True)
-	clgSched(4)  = Array(88, 44, 49, 98,  50, 55, 55, 55, False, True)
-	clgSched(5)  = Array(87, 45, 50, 98,  50, 55, 55, 55, False, True)
-	clgSched(6)  = Array(86, 44, 51, 98,  50, 55, 55, 55, False, True)
-	clgSched(7)  = Array(85, 43, 52, 98,  50, 55, 55, 55, False, True)
-	clgSched(8)  = Array(84, 42, 53, 98,  50, 55, 55, 55, False, True)
-	clgSched(9)  = Array(83, 41, 54, 98,  50, 55, 55, 55, False, True)
-	clgSched(10) = Array(80, 40, 55, 98,  50, 55, 55, 55, False, True)
-	clgSched(11) = Array(72, 45, 55, 98,  -1, 55, 55, 55, False, False)
-	clgSched(12) = Array(62, 50, 50, 98, 100, 55, 55, 53, True,  False)
-	clgSched(13) = Array(55, 45, 45, 98, 100, 55, 53, 50, True,  False)
-	clgSched(14) = Array(50, 40, 40, 98,  50, 50, 55, 50, True,  False)
-	clgSched(15) = Array(45, 40, 40, 95,  50, 50, 55, 50, True,  True)
+	clgSched(0)  = Array(92, 40, 45, 98,  50, 55, 55, 55, False, True,  "Cooling - Extreme Load")
+	clgSched(1)  = Array(91, 41, 46, 98,  50, 55, 55, 55, False, True,  "Cooling - Extreme Load")
+	clgSched(2)  = Array(90, 42, 47, 98,  50, 55, 55, 55, False, True,  "Cooling - Extreme Load")
+	clgSched(3)  = Array(89, 43, 48, 98,  50, 55, 55, 55, False, True,  "Cooling - Extreme Load")
+	clgSched(4)  = Array(88, 44, 49, 98,  50, 55, 55, 55, False, True,  "Cooling - Extreme Load")
+	clgSched(5)  = Array(87, 45, 50, 98,  50, 55, 55, 55, False, True,  "Cooling - Heavy Load")
+	clgSched(6)  = Array(86, 44, 51, 98,  50, 55, 55, 55, False, True,  "Cooling - Heavy Load")
+	clgSched(7)  = Array(85, 43, 52, 98,  50, 55, 55, 55, False, True,  "Cooling - Heavy Load")
+	clgSched(8)  = Array(84, 42, 53, 98,  50, 55, 55, 55, False, True,  "Cooling - Heavy Load")
+	clgSched(9)  = Array(83, 41, 54, 98,  50, 55, 55, 55, False, True,  "Cooling - Heavy Load")
+	clgSched(10) = Array(80, 40, 55, 98,  50, 55, 55, 55, False, True,  "Cooling Mode")
+	clgSched(11) = Array(72, 45, 55, 98,  -1, 55, 55, 55, False, False, "Cooling Mode")
+	clgSched(12) = Array(62, 50, 50, 98, 100, 55, 55, 53, True,  False, "Cooling - Low Load")
+	clgSched(13) = Array(55, 45, 45, 98, 100, 55, 53, 50, True,  False, "Cooling - Low Load")
+	clgSched(14) = Array(50, 40, 40, 98,  50, 50, 55, 50, True,  False, "Cooling -  Extreme Low load")
+	clgSched(15) = Array(45, 40, 40, 95,  50, 50, 55, 50, True,  True,  "Cooling -  Extreme Low load")
 	dispatchCooling = False
 	For i = 0 To UBound(clgSched)
 		r = clgSched(i)
