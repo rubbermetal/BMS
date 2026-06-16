@@ -181,22 +181,6 @@ Function dupControl( )
 	End If
 End Function
 
-Function CustomLog(x)
-	Dim result, y, power, term, n, maxIterations
-
-	maxIterations = 100
-	y = (x - 1) / (x + 1)
-	result = 0
-	power = y
-	term = 2 * power / 1
-	For n = 1 To maxIterations
-		result = result + term
-		power = power * y * y
-		term = 2 * power / (2 * n + 1)
-		Next
-	CustomLog = result
-End Function
-
 Function RoundToOneDecimal(number)
 	RoundToOneDecimal = Int(number * 10 + 0.5) / 10
 End Function
