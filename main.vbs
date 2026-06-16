@@ -25,7 +25,17 @@ Else
 End If
 currentShift.value = shift
 'Call AlarmStatus()
-Call chillerMode() 
+Call chillerMode()
+
+avgRaTemp = (((CDbl(Abs(ahu2RAtemp.value)) + CDbl(Abs(ahu1RAtemp.value))) / 2))
+avgRaRh = (CDbl(ahu1RH.value) + CDbl(ahu2RH.value)) / 2
+
+DewPoint.value = calculateDP(avgRaTemp, avgRaRh )
+
+Dim TempEnth, avgRH
+	TempEnth = (CDbl(HtgDsch1.value) + CDbl(HtgDsch2.value)) / 2
+	avgRH = (CDbl(ahu1RH.value) + CDbl(ahu2RH.value)) / 2
+	maEnth.value = Round(enthalpyIP(TempEnth, avgRH), 2)
 
 If IsSelected = True Then
 
