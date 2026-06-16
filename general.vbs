@@ -226,6 +226,57 @@ Function dischargeSp(highSp, lowSp)
 		dischargeSp = highSp
 	End If
 End Function
+' Moist-air enthalpy in Btu/lb dry air, from dry-bulb temp (deg F) and
+' relative humidity (percent). ASHRAE IP correlations, sea-level pressure.
+Function enthalpyIP(tempF, rhPercent)
+	Dim Patm, tRankine, lnPws, Pws, Pw, W
+	Patm = 14.696
+	tRankine = tempF + 459.67
+	lnPws = -1.0440397E4 / tRankine
+	lnPws = lnPws - 1.1294650E1
+	lnPws = lnPws - 2.7022355E-2 * tRankine
+	lnPws = lnPws + 1.2890360E-5 * tRankine ^ 2
+	lnPws = lnPws - 2.4780681E-9 * tRankine ^ 3
+	lnPws = lnPws + 6.5459673E0 * Log(tRankine)
+	Pws = Exp(lnPws)
+	Pw = (rhPercent / 100) * Pws
+	W = 0.621945 * Pw / (Patm - Pw)
+	enthalpyIP = 0.240 * tempF + W * (1061 + 0.444 * tempF)
+End Function
+' Total airside heat load (Btu/hr) as the enthalpy drop across the units.
+' Entering = maEnth.value; leaving = enthalpy of each unit's discharge air
+' at an assumed 95% RH. Each air handler = 55,000 CFM at 100%.
+Function calculateLoad()
+	Dim s1, s2, hIn, da1, da2
+	Dim cfm1, cfm2, hOut1, hOut2, load1, load2
+
+	' --- Read raw point values (text) ---
+	s1  = ahu1BlowerSpeed.value
+	s2  = ahu2BlowerSpeed.value
+	hIn = maEnth.value
+	da1 = ahu1DA.value
+	da2 = ahu2DA.value
+
+	' --- Bail out safely if any point is not a valid number ---
+	If Not (IsNumeric(s1) And IsNumeric(s2) And IsNumeric(hIn) And IsNumeric(da1) And IsNumeric(da2)) Then
+		calculateLoad = 0
+		Exit Function
+	End If
+
+	' --- Airflow per unit (55,000 CFM each at 100%) ---
+	cfm1 = 55000 * (CDbl(s1) / 100)
+	cfm2 = 55000 * (CDbl(s2) / 100)
+
+	' --- Leaving-air enthalpy per unit: discharge temp at 95% RH ---
+	hOut1 = enthalpyIP(CDbl(da1), 95)
+	hOut2 = enthalpyIP(CDbl(da2), 95)
+
+	' --- Per-unit load = 4.5 * CFM * (entering - leaving) enthalpy ---
+	load1 = 4.5 * cfm1 * (CDbl(hIn) - hOut1)
+	load2 = 4.5 * cfm2 * (CDbl(hIn) - hOut2)
+
+	calculateLoad = Round(load1 + load2, 0)
+End Function
 ' Create a sleep function
 Sub sleep(x)
 	'WScript.Sleep(x)
