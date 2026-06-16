@@ -34,7 +34,7 @@ DewPoint.value = calculateDP(avgRaTemp, avgRaRh )
 
 Dim TempEnth, avgRH
 	TempEnth = (CDbl(HtgDsch1.value) + CDbl(HtgDsch2.value)) / 2
-	avgRH = (CDbl(ahu1RH.value) + CDbl(ahu2RH.value)) / 2
+	avgRH = CDbl(ahu2RH.value)   ' ahu2RH only - ahu1RH reads high (boiler-room humidity)
 	maEnth.value = Round(enthalpyIP(TempEnth, avgRH), 2)
 
 If IsSelected = True Then
