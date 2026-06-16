@@ -1,4 +1,4 @@
-Sub outsideTemp_OnLoad(  )
+Sub outsideTemp_OnUpdate(  )
  Dim IsSelected
 Dim currentTime, currentHour, amOrPm, shift
 Dim dp, dp1, dp2
