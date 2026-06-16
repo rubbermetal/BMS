@@ -215,6 +215,17 @@ End Function
 Function numPad(number)
 	numPad = FormatNumber(number, 1)
 End Function
+' Discharge setpoint with return-RH reset.
+' Returns lowSp when the average return RH is below 55%, otherwise highSp.
+Function dischargeSp(highSp, lowSp)
+	Dim avgRH
+	avgRH = (CDbl(ahu1RH.value) + CDbl(ahu2RH.value)) / 2
+	If avgRH < 55 Then
+		dischargeSp = lowSp
+	Else
+		dischargeSp = highSp
+	End If
+End Function
 ' Create a sleep function
 Sub sleep(x)
 	'WScript.Sleep(x)
@@ -277,8 +288,8 @@ Function condA( )
 			raDamper2 = 40
 			oaDamper1 = 45
 			oaDamper2 = 45
-			blowerControl1 = 95
-			blowerControl2 = 95
+			blowerControl1 = 98
+			blowerControl2 = 98
 			If outsideTemp.value > alphanum3.value Then 
 				hv4Damper = 50 
 			Else
@@ -733,19 +744,28 @@ Function condE ( )
 End Function
 Function condF ( )
 				dataWindow.value = "Cooling - Low Load"
-				raDamper1 = 50
-				raDamper2 = 50
-				oaDamper1 = 55
-				oaDamper2 = 55
+				If outsideTemp.value > 62 Then
+					raDamper1 = 50
+					raDamper2 = 50
+					oaDamper1 = 50
+					oaDamper2 = 50
+					sp = dischargeSp(55, 53)
+				Else
+					raDamper1 = 45
+					raDamper2 = 45
+					oaDamper1 = 45
+					oaDamper2 = 45
+					sp = dischargeSp(53, 50)
+				End If
 				blowerControl1 = 98
 				blowerControl2 = 98
 				hv4Damper = 100
 				rhSp1 = 55
 				rhSp2 = 55
-				clgSp1 = 55
-				clgSp2 = 55
-				htgSp1 = 55
-				htgSp2 = 55
+				clgSp1 = sp
+				clgSp2 = sp
+				htgSp1 = sp
+				htgSp2 = sp
 				nosp = True
 				ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
 End Function
@@ -778,10 +798,10 @@ Function condH ( )
 				hv4Damper = 50
 				rhSp1 = 50
 				rhSp2 = 50
-				clgSp1 = 55
-				clgSp2 = 55
-				htgSp1 = 53
-				htgSp2 = 53
+				clgSp1 = dischargeSp(55, 50)
+				clgSp2 = dischargeSp(55, 50)
+				htgSp1 = dischargeSp(55, 50)
+				htgSp2 = dischargeSp(55, 50)
 				nosp = True
 				ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
 End Function
@@ -820,10 +840,10 @@ Function condJ ( )
 				hv4Damper = 50
 				rhSp1 = 50
 				rhSp2 = 50
-				clgSp1 = 55
-				clgSp2 = 55
-				htgSp1 = 53
-				htgSp2 = 53
+				clgSp1 = dischargeSp(55, 50)
+				clgSp2 = dischargeSp(55, 50)
+				htgSp1 = dischargeSp(55, 50)
+				htgSp2 = dischargeSp(55, 50)
 				nosp = True
 				ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
 End Function
