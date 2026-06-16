@@ -297,6 +297,21 @@ Function calculateLoad()
 
 	calculateLoad = Round(load1 + load2, 0)
 End Function
+' Cooling demand as % of total (two-chiller, 500-ton) plant capacity.
+' 12.37 Btu/lb is the max enthalpy drop two chillers can pull at full airflow
+' (500 tons / (4.5 * ~107,800 CFM)). Pass the target leaving enthalpy
+' (e.g. enthalpyIP(clgSp, 91)); returns (maEnth - target) / 12.37 * 100.
+Function pctCapacity(targetEnth)
+	Dim h, delta
+	h = maEnth.value
+	If Not IsNumeric(h) Then
+		pctCapacity = 0
+		Exit Function
+	End If
+	delta = CDbl(h) - targetEnth
+	If delta < 0 Then delta = 0
+	pctCapacity = Round((delta / 12.37) * 100, 1)
+End Function
 
 ' Function to change control settings\
 ' status is the override checkbox
