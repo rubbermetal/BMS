@@ -233,12 +233,36 @@ Function enthalpyIP(tempF, rhPercent)
 	W = 0.621945 * Pw / (Patm - Pw)
 	enthalpyIP = 0.240 * tempF + W * (1061 + 0.444 * tempF)
 End Function
+' Saturation humidity ratio (lb water / lb dry air) at a dry-bulb temp (deg F).
+Function satW(tempF)
+	Dim Patm, tRankine, lnPws, Pws
+	Patm = 14.696
+	tRankine = tempF + 459.67
+	lnPws = -1.0440397E4 / tRankine
+	lnPws = lnPws - 1.1294650E1
+	lnPws = lnPws - 2.7022355E-2 * tRankine
+	lnPws = lnPws + 1.2890360E-5 * tRankine ^ 2
+	lnPws = lnPws - 2.4780681E-9 * tRankine ^ 3
+	lnPws = lnPws + 6.5459673E0 * Log(tRankine)
+	Pws = Exp(lnPws)
+	satW = 0.621945 * Pws / (Patm - Pws)
+End Function
+' Leaving-air enthalpy (Btu/lb) across a coil. Wet (leaving ~95% RH) when the
+' discharge temp is below the entering dew point (satW at discharge < Win);
+' otherwise dry, so leaving humidity stays at the entering Win (sensible only).
+Function leavingEnthalpy(daTemp, Win)
+	If satW(daTemp) < Win Then
+		leavingEnthalpy = enthalpyIP(daTemp, 95)
+	Else
+		leavingEnthalpy = 0.240 * daTemp + Win * (1061 + 0.444 * daTemp)
+	End If
+End Function
 ' Total airside heat load (Btu/hr) as the enthalpy drop across the units.
-' Entering = maEnth.value; leaving = enthalpy of each unit's discharge air
-' at an assumed 95% RH. Each air handler = 55,000 CFM at 100%.
+' Entering = maEnth.value; leaving = each unit's discharge air, wet/dry by
+' discharge temp vs entering dew point. Each air handler = 55,000 CFM at 100%.
 Function calculateLoad()
-	Dim s1, s2, hIn, da1, da2
-	Dim cfm1, cfm2, hOut1, hOut2, load1, load2
+	Dim s1, s2, hIn, da1, da2, t1, t2
+	Dim TempEnth, Win, cfm1, cfm2, hOut1, hOut2, load1, load2
 
 	' --- Read raw point values (text) ---
 	s1  = ahu1BlowerSpeed.value
@@ -246,9 +270,11 @@ Function calculateLoad()
 	hIn = maEnth.value
 	da1 = ahu1DA.value
 	da2 = ahu2DA.value
+	t1  = HtgDsch1.value
+	t2  = HtgDsch2.value
 
 	' --- Bail out safely if any point is not a valid number ---
-	If Not (IsNumeric(s1) And IsNumeric(s2) And IsNumeric(hIn) And IsNumeric(da1) And IsNumeric(da2)) Then
+	If Not (IsNumeric(s1) And IsNumeric(s2) And IsNumeric(hIn) And IsNumeric(da1) And IsNumeric(da2) And IsNumeric(t1) And IsNumeric(t2)) Then
 		calculateLoad = 0
 		Exit Function
 	End If
@@ -257,9 +283,13 @@ Function calculateLoad()
 	cfm1 = 55000 * (CDbl(s1) / 100)
 	cfm2 = 55000 * (CDbl(s2) / 100)
 
-	' --- Leaving-air enthalpy per unit: discharge temp at 95% RH ---
-	hOut1 = enthalpyIP(CDbl(da1), 95)
-	hOut2 = enthalpyIP(CDbl(da2), 95)
+	' --- Entering (mixed-air) humidity ratio, consistent with maEnth ---
+	TempEnth = (CDbl(t1) + CDbl(t2)) / 2
+	Win = (CDbl(hIn) - 0.240 * TempEnth) / (1061 + 0.444 * TempEnth)
+
+	' --- Leaving enthalpy per unit, wet/dry capped by discharge temp ---
+	hOut1 = leavingEnthalpy(CDbl(da1), Win)
+	hOut2 = leavingEnthalpy(CDbl(da2), Win)
 
 	' --- Per-unit load = 4.5 * CFM * (entering - leaving) enthalpy ---
 	load1 = 4.5 * cfm1 * (CDbl(hIn) - hOut1)
