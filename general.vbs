@@ -282,225 +282,61 @@ Sub ScenarioA(raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerContr
 	changeControl ahu2HtgSpMode, ahu2HtgSp, htgSp2, "manual"
 
 End Sub
-Function condA( )
-			dataWindow.value = "Cooling - Extreme Load"
-			raDamper1 = 40
-			raDamper2 = 40
-			oaDamper1 = 45
-			oaDamper2 = 45
-			blowerControl1 = 98
-			blowerControl2 = 98
-			hv4Damper = 50
-			rhSp1 = 55
-			rhSp2 = 55
-			clgSp1 = 55
-			clgSp2 = 55
-			htgSp1 = 55
-			htgSp2 = 55
-			nosp = True
-			ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
-End Function
-Function condA_1( )
-			dataWindow.value = "Cooling - Extreme Load"
-			raDamper1 = 41
-			raDamper2 = 41
-			oaDamper1 = 46
-			oaDamper2 = 46
-			blowerControl1 = 98
-			blowerControl2 = 98
-			hv4Damper = 50
-			rhSp1 = 55
-			rhSp2 = 55
-			clgSp1 = 55
-			clgSp2 = 55
-			htgSp1 = 55
-			htgSp2 = 55
-			nosp = True
-			ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
-End Function
-Function condA_2( )
-			dataWindow.value = "Cooling - Extreme Load"
-			raDamper1 = 42
-			raDamper2 = 42
-			oaDamper1 = 47
-			oaDamper2 = 47
-			blowerControl1 = 98
-			blowerControl2 = 98
-			hv4Damper = 50
-			rhSp1 = 55
-			rhSp2 = 55
-			clgSp1 = 55
-			clgSp2 = 55
-			htgSp1 = 55
-			htgSp2 = 55
-			nosp = True
-			ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
-End Function
-Function condA_3( )
-			dataWindow.value = "Cooling - Extreme Load"
-			raDamper1 = 43
-			raDamper2 = 43
-			oaDamper1 = 48
-			oaDamper2 = 48
-			blowerControl1 = 98
-			blowerControl2 = 98
-			hv4Damper = 50
-			rhSp1 = 55
-			rhSp2 = 55
-			clgSp1 = 55
-			clgSp2 = 55
-			htgSp1 = 55
-			htgSp2 = 55
-			nosp = True
-			ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
-End Function
-Function condA_4( )
-			dataWindow.value = "Cooling - Extreme Load"
-			raDamper1 = 44
-			raDamper2 = 44
-			oaDamper1 = 49
-			oaDamper2 = 49
-			blowerControl1 = 98
-			blowerControl2 = 98
-			hv4Damper = 50
-			rhSp1 = 55
-			rhSp2 = 55
-			clgSp1 = 55
-			clgSp2 = 55
-			htgSp1 = 55
-			htgSp2 = 55
-			nosp = True
-			ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
-End Function
-Function condB ( )
-			dataWindow.value = "Cooling - Heavy Load"
-			raDamper1 = 45
-			raDamper2 = 45
-			oaDamper1 = 50
-			oaDamper2 = 50
-			blowerControl1 = 98
-			blowerControl2 = 98
-			hv4Damper = 50
-			rhSp1 = 55
-			rhSp2 = 55
-			clgSp1 = 55
-			clgSp2 = 55
-			htgSp1 = 55
-			htgSp2 = 55
-			nosp = True
-			ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
-End Function
-Function condB_1 ( )
-			dataWindow.value = "Cooling - Heavy Load"
-			raDamper1 = 44
-			raDamper2 = 44
-			oaDamper1 = 51
-			oaDamper2 = 51
-			blowerControl1 = 98
-			blowerControl2 = 98
-			hv4Damper = 50
-			rhSp1 = 55
-			rhSp2 = 55
-			clgSp1 = 55
-			clgSp2 = 55
-			htgSp1 = 55
-			htgSp2 = 55
-			nosp = True
-			ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
-End Function
-Function condB_2 ( )
-			dataWindow.value = "Cooling - Heavy Load"
-			raDamper1 = 43
-			raDamper2 = 43
-			oaDamper1 = 52
-			oaDamper2 = 52
-			blowerControl1 = 98
-			blowerControl2 = 98
-			hv4Damper = 50
-			rhSp1 = 55
-			rhSp2 = 55
-			clgSp1 = 55
-			clgSp2 = 55
-			htgSp1 = 55
-			htgSp2 = 55
-			nosp = True
-			ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
-End Function
-Function condB_3 ( )
-			dataWindow.value = "Cooling - Heavy Load"
-			raDamper1 = 42
-			raDamper2 = 42
-			oaDamper1 = 53
-			oaDamper2 = 53
-			blowerControl1 = 98
-			blowerControl2 = 98
-			hv4Damper = 50
-			rhSp1 = 55
-			rhSp2 = 55
-			clgSp1 = 55
-			clgSp2 = 55
-			htgSp1 = 55
-			htgSp2 = 55
-			nosp = True
-			ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
-End Function
-Function condB_4 ( )
-			dataWindow.value = "Cooling - Heavy Load"
-			raDamper1 = 41
-			raDamper2 = 41
-			oaDamper1 = 54
-			oaDamper2 = 54
-			blowerControl1 = 98
-			blowerControl2 = 98
-			hv4Damper = 50
-			rhSp1 = 55
-			rhSp2 = 55
-			clgSp1 = 55
-			clgSp2 = 55
-			htgSp1 = 55
-			htgSp2 = 55
-			nosp = True
-			ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
-End Function
-Function condC ( )
-			dataWindow.value = "Cooling Mode"
-			raDamper1 = 40
-			raDamper2 = 40
-			oaDamper1 = 55
-			oaDamper2 = 55
-			blowerControl1 = 98
-			blowerControl2 = 98
-			hv4Damper = 50
-			rhSp1 = 55
-			rhSp2 = 55
-			clgSp1 = 55
-			clgSp2 = 55
-			htgSp1 = 55
-			htgSp2 = 55
-			nosp = True
-			ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
-End Function
-Function condD ( )
-			dataWindow.value = "Cooling Mode"
-			raDamper1 = 45
-			raDamper2 = 45
-			oaDamper1 = 55
-			oaDamper2 = 55
-			blowerControl1 = 98
-			blowerControl2 = 98
-			If outsideTemp.value > alphanum3.value Then 
-				hv4Damper = 50 
-			Else
-				hv4Damper = 100
+' Apply one cooling schedule row (replaces condA-condD and condF/H/J).
+Sub applyCoolingRow(r)
+	Dim hv4, sp
+	If r(4) = -1 Then
+		If outsideTemp.value > alphanum3.value Then
+			hv4 = 50
+		Else
+			hv4 = 100
+		End If
+	Else
+		hv4 = r(4)
+	End If
+	sp = dischargeSp(r(6), r(7))
+	ScenarioA r(1), r(1), r(2), r(2), r(3), r(3), hv4, r(5), r(5), sp, sp, sp, sp, True
+End Sub
+' Cooling schedule dispatch. Returns True if a row was applied; returns
+' False ONLY for a chiller-OFF sub-72 band, so the caller runs free cooling.
+' Row cols: lowBound, RAclosed, OAopen, fan, hv4 (-1 = condD rule:
+' 50 if OAT>alphanum3 else 100), rhSp, dischHi, dischLo, chillerOnly,
+' inclLowEdge (True = temp >= lowBound, False = temp > lowBound).
+Function dispatchCooling(oat)
+	Dim clgSched(15), i, r, reached
+	clgSched(0)  = Array(92, 40, 45, 98,  50, 55, 55, 55, False, True)
+	clgSched(1)  = Array(91, 41, 46, 98,  50, 55, 55, 55, False, True)
+	clgSched(2)  = Array(90, 42, 47, 98,  50, 55, 55, 55, False, True)
+	clgSched(3)  = Array(89, 43, 48, 98,  50, 55, 55, 55, False, True)
+	clgSched(4)  = Array(88, 44, 49, 98,  50, 55, 55, 55, False, True)
+	clgSched(5)  = Array(87, 45, 50, 98,  50, 55, 55, 55, False, True)
+	clgSched(6)  = Array(86, 44, 51, 98,  50, 55, 55, 55, False, True)
+	clgSched(7)  = Array(85, 43, 52, 98,  50, 55, 55, 55, False, True)
+	clgSched(8)  = Array(84, 42, 53, 98,  50, 55, 55, 55, False, True)
+	clgSched(9)  = Array(83, 41, 54, 98,  50, 55, 55, 55, False, True)
+	clgSched(10) = Array(80, 40, 55, 98,  50, 55, 55, 55, False, True)
+	clgSched(11) = Array(72, 45, 55, 98,  -1, 55, 55, 55, False, False)
+	clgSched(12) = Array(62, 50, 50, 98, 100, 55, 55, 53, True,  False)
+	clgSched(13) = Array(55, 45, 45, 98, 100, 55, 53, 50, True,  False)
+	clgSched(14) = Array(50, 40, 40, 98,  50, 50, 55, 50, True,  False)
+	clgSched(15) = Array(45, 40, 40, 95,  50, 50, 55, 50, True,  True)
+	dispatchCooling = False
+	For i = 0 To UBound(clgSched)
+		r = clgSched(i)
+		If r(9) Then
+			reached = (oat >= r(0))
+		Else
+			reached = (oat > r(0))
+		End If
+		If reached Then
+			If r(8) And chillerStatus.value <> "ON" Then
+				Exit Function
 			End If
-			rhSp1 = 55
-			rhSp2 = 55
-			clgSp1 = 55
-			clgSp2 = 55
-			htgSp1 = 55
-			htgSp2 = 55
-			nosp = True
-			ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+			applyCoolingRow r
+			dispatchCooling = True
+			Exit Function
+		End If
+	Next
 End Function
 Function condE ( )
 				dataWindow.value = "Free Cooling Mode"
@@ -520,33 +356,6 @@ Function condE ( )
 				nosp = True
 				ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
 End Function
-Function condF ( )
-				dataWindow.value = "Cooling - Low Load"
-				If outsideTemp.value > 62 Then
-					raDamper1 = 50
-					raDamper2 = 50
-					oaDamper1 = 50
-					oaDamper2 = 50
-					sp = dischargeSp(55, 53)
-				Else
-					raDamper1 = 45
-					raDamper2 = 45
-					oaDamper1 = 45
-					oaDamper2 = 45
-					sp = dischargeSp(53, 50)
-				End If
-				blowerControl1 = 98
-				blowerControl2 = 98
-				hv4Damper = 100
-				rhSp1 = 55
-				rhSp2 = 55
-				clgSp1 = sp
-				clgSp2 = sp
-				htgSp1 = sp
-				htgSp2 = sp
-				nosp = True
-				ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
-End Function
 Function condG ( )
 				dataWindow.value = "Free Cooling Mode"
 				raDamper1 = 85
@@ -562,24 +371,6 @@ Function condG ( )
 				clgSp2 = 53
 				htgSp1 = 53
 				htgSp2 = 53
-				nosp = True
-				ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
-End Function
-Function condH ( )
-				dataWindow.value = "Cooling -  Extreme Low load"
-				raDamper1 = 40
-				raDamper2 = 40
-				oaDamper1 = 40
-				oaDamper2 = 40
-				blowerControl1 = 98
-				blowerControl2 = 98
-				hv4Damper = 50
-				rhSp1 = 50
-				rhSp2 = 50
-				clgSp1 = dischargeSp(55, 50)
-				clgSp2 = dischargeSp(55, 50)
-				htgSp1 = dischargeSp(55, 50)
-				htgSp2 = dischargeSp(55, 50)
 				nosp = True
 				ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
 End Function
@@ -605,24 +396,6 @@ Function condI ( )
 				clgSp2 = 55
 				htgSp1 = 53
 				htgSp2 = 53
-				ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
-End Function
-Function condJ ( )
-				dataWindow.value = "Cooling -  Extreme Low load"
-				raDamper1 = 40
-				raDamper2 = 40
-				oaDamper1 = 40
-				oaDamper2 = 40
-				blowerControl1 = 95
-				blowerControl2 = 95
-				hv4Damper = 50
-				rhSp1 = 50
-				rhSp2 = 50
-				clgSp1 = dischargeSp(55, 50)
-				clgSp2 = dischargeSp(55, 50)
-				htgSp1 = dischargeSp(55, 50)
-				htgSp2 = dischargeSp(55, 50)
-				nosp = True
 				ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
 End Function
 Function condK ( )

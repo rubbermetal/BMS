@@ -29,47 +29,15 @@ Call chillerMode()
 
 If IsSelected = True Then
 
-		If outsideTemp.value => 92 Then
-			Call condA()
-		ElseIf outsideTemp.value => 91 And outsideTemp.value < 92 Then
-			Call condA_1()
-		ElseIf outsideTemp.value => 90 And outsideTemp.value < 91 Then
-			Call condA_2
-		ElseIf outsideTemp.value => 89 And outsideTemp.value < 90 Then
-			Call condA_3
-		ElseIf outsideTemp.value => 88 And outsideTemp.value < 89 Then
-			Call condA_4
-		ElseIf outsideTemp.value => 87 And outsideTemp.value < 88 Then
-			Call condB()
-		ElseIf outsideTemp.value => 86 And outsideTemp.value < 87 Then
-			Call condB_1()
-		ElseIf outsideTemp.value => 85 And outsideTemp.value < 86 Then
-			Call condB_2()
-		ElseIf outsideTemp.value => 84 And outsideTemp.value < 85 Then
-			Call condB_3()
-		ElseIf outsideTemp.value => 83 And outsideTemp.value < 84 Then
-			Call condB_4()
-		ElseIf outsideTemp.value => 80 And outsideTemp.value < 83 Then
-			Call condC()
-		ElseIf outsideTemp.value > 72 And outsideTemp.value < 80 Then
-			Call condD()
-		ElseIf outsideTemp.value =< 72 And outsideTemp.value > 55 Then
-			If chillerStatus.value = "OFF" Then
-				Call condE()
-			Else
-				Call condF()
-			End If
-		ElseIf outsideTemp.value =< 55 And outsideTemp.value > 50 Then
-			If chillerStatus.value = "OFF" Then
-				Call condG()
-			Else
-				Call condH()
-			End If
-		ElseIf outsideTemp.value =< 50 And outsideTemp.value >= 45 Then
-			If chillerStatus.value = "OFF" Then
-				Call condI()
-			Else
-				Call condJ()
+		If outsideTemp.value >= 45 Then
+			If Not dispatchCooling(outsideTemp.value) Then
+				If outsideTemp.value > 55 Then
+					Call condE()
+				ElseIf outsideTemp.value > 50 Then
+					Call condG()
+				Else
+					Call condI()
+				End If
 			End If
 		ElseIf outsideTemp.value =< 45 And outsideTemp.value > 0 Then
 			If outsideTemp.value =< 45 And outsideTemp.value > 40 Then
