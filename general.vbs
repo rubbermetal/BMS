@@ -119,7 +119,7 @@ Function AlarmStatus(  )
 		Set player = CreateObject("WMPlayer.OCX")
 		player.URL = "C:\Program Files\Honeywell\client\abstract\hv4-blower-alarm.mp3"
 		player.Controls.play
-		MsgBox "HV4 is in alarm, blower is offline."
+		'MsgBox "HV4 is in alarm, blower is offline."
 		Set player = Nothing
 		alarmSilence.value = True
 		Exit Function
@@ -127,7 +127,7 @@ Function AlarmStatus(  )
 		Set player = CreateObject("WMPlayer.OCX")
 		player.URL = "C:\Program Files\Honeywell\client\abstract\ahu2-blower-alarm.mp3"
 		player.Controls.play
-		MsgBox "AHU-2 is in alarm, blower is offline."
+		'MsgBox "AHU-2 is in alarm, blower is offline."
 		Set player = Nothing
 		alarmSilence.value = True
 		Exit Function
@@ -135,7 +135,7 @@ Function AlarmStatus(  )
 		Set player = CreateObject("WMPlayer.OCX")
 		player.URL = "C:\Program Files\Honeywell\client\abstract\ahu1-blower-alarm.mp3"
 		player.Controls.play
-		MsgBox "AHU-1 is in alarm, blower is offline."
+		'MsgBox "AHU-1 is in alarm, blower is offline."
 		Set player = Nothing
 		alarmSilence.value = True
 		Exit Function
@@ -307,10 +307,12 @@ End Function
 Function coolingLabel()
 	Dim pct
 	pct = pctCapacity()
-	If pct >= 55 Then
+	If pct >= 65 Then
 		coolingLabel = "Cooling - Extreme Load"
-	ElseIf pct >= 40 Then
+	ElseIf pct >= 55 Then
 		coolingLabel = "Cooling - Heavy Load"
+	ElseIf pct >= 40 Then
+		coolingLabel = "Cooling - Normal Load"
 	ElseIf pct >= 25 Then
 		coolingLabel = "Cooling - Moderate Load"
 	ElseIf pct >= 10 Then
@@ -393,7 +395,7 @@ Function dispatchCooling(oat)
 	Dim clgSched(15), i, r, reached
 	dispatchCooling = False
 	If Not IsNumeric(oat) Then Exit Function
-	oat = CDbl(oat)   ' force numeric: a string arg compares wrong against the table numbers
+	oat = CDbl(oat)
 	clgSched(0)  = Array(92, 40, 45, 98,  50, 55, 55, 55, False, True)
 	clgSched(1)  = Array(91, 41, 46, 98,  50, 55, 55, 55, False, True)
 	clgSched(2)  = Array(90, 42, 47, 98,  50, 55, 55, 55, False, True)
@@ -433,8 +435,8 @@ Function condE ( )
 				raDamper2 = 95
 				oaDamper1 = 100
 				oaDamper2 = 100
-				blowerControl1 = 98
-				blowerControl2 = 98
+				blowerControl1 = 82
+				blowerControl2 = 82
 				hv4Damper = 100
 				rhSp1 = 35
 				rhSp2 = 35
@@ -451,8 +453,8 @@ Function condG ( )
 				raDamper2 = 85
 				oaDamper1 = 100
 				oaDamper2 = 100
-				blowerControl1 = 88
-				blowerControl2 = 88
+				blowerControl1 = 85
+				blowerControl2 = 85
 				hv4Damper = 50
 				rhSp1 = 35
 				rhSp2 = 35
@@ -476,8 +478,8 @@ Function condI ( )
 				Else
 					nosp = True
 				End If
-				blowerControl1 = 82
-				blowerControl2 = 82
+				blowerControl1 = 88
+				blowerControl2 = 88
 				hv4Damper = 50
 				rhSp1 =  35
 				rhSp2 = 35
