@@ -391,6 +391,9 @@ End Sub
 ' inclLowEdge (True = temp >= lowBound, False = temp > lowBound).
 Function dispatchCooling(oat)
 	Dim clgSched(15), i, r, reached
+	dispatchCooling = False
+	If Not IsNumeric(oat) Then Exit Function
+	oat = CDbl(oat)   ' force numeric: a string arg compares wrong against the table numbers
 	clgSched(0)  = Array(92, 40, 45, 98,  50, 55, 55, 55, False, True)
 	clgSched(1)  = Array(91, 41, 46, 98,  50, 55, 55, 55, False, True)
 	clgSched(2)  = Array(90, 42, 47, 98,  50, 55, 55, 55, False, True)
@@ -407,7 +410,6 @@ Function dispatchCooling(oat)
 	clgSched(13) = Array(55, 45, 45, 98, 100, 55, 53, 50, True,  False)
 	clgSched(14) = Array(50, 40, 40, 98,  50, 50, 55, 50, True,  False)
 	clgSched(15) = Array(45, 40, 40, 95,  50, 50, 55, 50, True,  True)
-	dispatchCooling = False
 	For i = 0 To UBound(clgSched)
 		r = clgSched(i)
 		If r(9) Then
