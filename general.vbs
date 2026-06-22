@@ -209,7 +209,7 @@ End Function
 ' Returns lowSp when the average return RH is below 55%, otherwise highSp.
 Function dischargeSp(highSp, lowSp)
 	Dim avgRH
-	avgRH = (CDbl(ahu1RH.value) + CDbl(ahu2RH.value)) / 2
+	avgRH = CDbl(ahu2RH.value)
 	If avgRH < 55 Then
 		dischargeSp = lowSp
 	Else
@@ -254,27 +254,27 @@ Function leavingEnthalpy(daTemp, Win)
 	If satW(daTemp) < Win Then
 		leavingEnthalpy = enthalpyIP(daTemp, 91)
 	Else
-		leavingEnthalpy = 0.240 * daTemp + Win * (1061 + 0.444 * daTemp)
+		leavingEnthalpy = 0.270 * daTemp + Win * (1061 + 0.444 * daTemp)
 	End If
 End Function
-' Total airside heat load (Btu/hr) as the enthalpy drop across the units.
-' Entering = maEnth.value; leaving = each unit's discharge air, wet/dry by
-' discharge temp vs entering dew point. Each air handler = 55,000 CFM at 100%.
+' Total airside heat load (Btu/hr), computed per air handler then summed.
+' Each unit: entering enthalpy from its own HtgDsch temp + ahu2RH, leaving by
+' its own discharge temp (wet/dry judged independently). Each AHU = 55,000 CFM.
 Function calculateLoad()
-	Dim s1, s2, hIn, da1, da2, t1, t2
-	Dim TempEnth, Win, cfm1, cfm2, hOut1, hOut2, load1, load2
+	Dim s1, s2, da1, da2, t1, t2, rh
+	Dim cfm1, cfm2, hIn1, hIn2, Win1, Win2, hOut1, hOut2, load1, load2
 
 	' --- Read raw point values (text) ---
 	s1  = ahu1BlowerSpeed.value
 	s2  = ahu2BlowerSpeed.value
-	hIn = maEnth.value
 	da1 = ahu1DA.value
 	da2 = ahu2DA.value
 	t1  = HtgDsch1.value
 	t2  = HtgDsch2.value
+	rh  = ahu2RH.value
 
 	' --- Bail out safely if any point is not a valid number ---
-	If Not (IsNumeric(s1) And IsNumeric(s2) And IsNumeric(hIn) And IsNumeric(da1) And IsNumeric(da2) And IsNumeric(t1) And IsNumeric(t2)) Then
+	If Not (IsNumeric(s1) And IsNumeric(s2) And IsNumeric(da1) And IsNumeric(da2) And IsNumeric(t1) And IsNumeric(t2) And IsNumeric(rh)) Then
 		calculateLoad = 0
 		Exit Function
 	End If
@@ -283,17 +283,17 @@ Function calculateLoad()
 	cfm1 = 55000 * (CDbl(s1) / 100)
 	cfm2 = 55000 * (CDbl(s2) / 100)
 
-	' --- Entering (mixed-air) humidity ratio, consistent with maEnth ---
-	TempEnth = (CDbl(t1) + CDbl(t2)) / 2
-	Win = (CDbl(hIn) - 0.240 * TempEnth) / (1061 + 0.444 * TempEnth)
+	' --- AHU1: own entering enthalpy (HtgDsch1 + ahu2RH), own wet/dry ---
+	hIn1 = enthalpyIP(CDbl(t1), CDbl(rh))
+	Win1 = (hIn1 - 0.240 * CDbl(t1)) / (1061 + 0.444 * CDbl(t1))
+	hOut1 = leavingEnthalpy(CDbl(da1), Win1)
+	load1 = 4.5 * cfm1 * (hIn1 - hOut1)
 
-	' --- Leaving enthalpy per unit, wet/dry capped by discharge temp ---
-	hOut1 = leavingEnthalpy(CDbl(da1), Win)
-	hOut2 = leavingEnthalpy(CDbl(da2), Win)
-
-	' --- Per-unit load = 4.5 * CFM * (entering - leaving) enthalpy ---
-	load1 = 4.5 * cfm1 * (CDbl(hIn) - hOut1)
-	load2 = 4.5 * cfm2 * (CDbl(hIn) - hOut2)
+	' --- AHU2: own entering enthalpy (HtgDsch2 + ahu2RH), own wet/dry ---
+	hIn2 = enthalpyIP(CDbl(t2), CDbl(rh))
+	Win2 = (hIn2 - 0.240 * CDbl(t2)) / (1061 + 0.444 * CDbl(t2))
+	hOut2 = leavingEnthalpy(CDbl(da2), Win2)
+	load2 = 4.5 * cfm2 * (hIn2 - hOut2)
 
 	calculateLoad = Round(load1 + load2, 0)
 End Function

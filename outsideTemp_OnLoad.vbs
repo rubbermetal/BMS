@@ -28,7 +28,7 @@ currentShift.value = shift
 Call chillerMode()
 
 avgRaTemp = (((CDbl(Abs(ahu2RAtemp.value)) + CDbl(Abs(ahu1RAtemp.value))) / 2))
-avgRaRh = (CDbl(ahu1RH.value) + CDbl(ahu2RH.value)) / 2
+avgRaRh = CDbl(ahu2RH.value)
 
 DewPoint.value = calculateDP(avgRaTemp, avgRaRh )
 
