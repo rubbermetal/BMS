@@ -720,3 +720,79 @@ Function condT ( )
 			nosp = True
 			ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
 End Function
+
+'==============================================================================
+' Chiller staging (lift-aware) & free-cooling helpers   (added 2026-07-08)
+' Reuses the existing enthalpyIP(). Calibrated to actual chiller runtime: the
+' 2nd-chiller flag matched 92% vs 85% for MA enthalpy alone. Adds the term the
+' load-only pctCapacity() can't see: OA wet-bulb proxies condenser lift (cond
+' water tracks wet-bulb + tower approach), and a chiller makes fewer tons as lift
+' rises - so 2 chillers stage EARLIER on hot/humid days at the same load.
+'   staging index = MA enthalpy + STAGE_K*(OA wet-bulb - 65)
+' NEEDS A RELIABLE OA RH (or dewpoint). AHU1OaRh reads ~99% (bad) - feed a good
+' source or the wet-bulb / OA-enthalpy / free-cooling values will be wrong.
+'
+' HOW TO CALL (wire the point reads / display yourself):
+'   maE = enthalpyIP(HtgDsch2.value, ahu2RH.value)      ' MA enthalpy, BTU/lb
+'   oaE = enthalpyIP(outsideTemp.value, oaRh.value)     ' OA enthalpy, BTU/lb
+'   wb  = WetBulbF(outsideTemp.value, oaRh.value)       ' OA wet-bulb, deg F
+'   n   = ChillerStage( StageIndex(maE, wb) )           ' 0=off, 1=one, 2=two
+'   fc  = FreeCoolPct(maE, oaE)                          ' 0-100 % (-1 = n/a)
+' (Load-based view stays: pctCapacity() > 50 ~ 2 chillers. This is the lift-aware
+'  cross-check; fuse once re-fit against calculateLoad if wanted.)
+'==============================================================================
+
+Const STAGE_K   = 0.35
+Const STAGE_ON  = 20
+Const STAGE_2ND = 27.2
+
+' Outdoor wet-bulb (deg F), Stull approximation = condenser-lift proxy.
+'   Call: WetBulbF(outsideTemp.value, oaRh.value)
+Function WetBulbF(tempF, rhPercent)
+	Dim r, c, tw
+	r = rhPercent
+	If r < 1 Then r = 1
+	If r > 100 Then r = 100
+	c = (tempF - 32) * 5 / 9
+	tw = c * Atn(0.151977 * Sqr(r + 8.313659)) + Atn(c + r) - Atn(r - 1.676331) _
+		+ 0.00391838 * (r ^ 1.5) * Atn(0.023101 * r) - 4.686035
+	WetBulbF = tw * 9 / 5 + 32
+End Function
+
+' Lift-aware staging index = MA enthalpy + STAGE_K*(wet-bulb - 65).
+'   Call: StageIndex(maEnthalpy, oaWetBulb)
+Function StageIndex(maE, wb)
+	StageIndex = maE + STAGE_K * (wb - 65)
+End Function
+
+' Chiller stage from the index: 0 = off, 1 = one chiller, 2 = two chillers.
+'   Call: ChillerStage( StageIndex(maE, wb) )
+Function ChillerStage(idx)
+	If idx < STAGE_ON Then
+		ChillerStage = 0
+	ElseIf idx < STAGE_2ND Then
+		ChillerStage = 1
+	Else
+		ChillerStage = 2
+	End If
+End Function
+
+' Free-cooling availability, 0-100 %  (returns -1 = n/a when chiller already off).
+'   100 = OA cold/dry enough to hold without the chiller; 1-99 = partial trim only.
+'   Call: FreeCoolPct(maEnthalpy, oaEnthalpy)
+Function FreeCoolPct(maE, oaE)
+	Dim denom, p
+	If maE <= STAGE_ON Then
+		FreeCoolPct = -1
+		Exit Function
+	End If
+	denom = maE - STAGE_ON
+	If denom <= 0 Then
+		FreeCoolPct = 0
+		Exit Function
+	End If
+	p = (maE - oaE) / denom * 100
+	If p < 0 Then p = 0
+	If p > 100 Then p = 100
+	FreeCoolPct = p
+End Function
