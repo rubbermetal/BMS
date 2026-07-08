@@ -279,9 +279,11 @@ Function calculateLoad()
 		Exit Function
 	End If
 
-	' --- Airflow per unit (55,000 CFM each at 100%) ---
-	cfm1 = 55000 * (CDbl(s1) / 100)
-	cfm2 = 55000 * (CDbl(s2) / 100)
+	' --- Airflow per unit. 51,000 = 55k design x 0.926, calibrated to waterside
+	'     chiller tons: zeros the ~7% full-load overread. Light-load still reads
+	'     high (enthalpy small-diff + CFM falls faster than VFD speed at part load). ---
+	cfm1 = 51000 * (CDbl(s1) / 100)
+	cfm2 = 51000 * (CDbl(s2) / 100)
 
 	' --- AHU1: own entering enthalpy (HtgDsch1 + ahu2RH), own wet/dry ---
 	hIn1 = enthalpyIP(CDbl(t1), CDbl(rh))
