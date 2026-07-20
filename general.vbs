@@ -2,7 +2,7 @@ Class ControlField
 	Public value
 End Class
 
-Dim control, status, steamPressure
+Dim control, status, steamPressure, skipDampers
 steamPressure = alphanum11.value - 1
 
 Function timeFetch ( )
@@ -355,10 +355,14 @@ Sub changeControl(status, control, sp, mode)
 End Sub
 ' Cooling scenario A
 Sub ScenarioA(raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp)
-	changeControl ahu1RAdamperMode, ahu1RAdamper, raDamper1, "manual"
-	changeControl ahu2RAdamperMode, ahu2RAdamper, raDamper2, "manual"
-	changeControl ahu1OAdamperMode, ahu1OAdamper, oaDamper1, "manual"
-	changeControl ahu2OAdamperMode, ahu2OAdamper, oaDamper2, "manual"
+	' skipDampers is set True by applyCoolingRow when the enthalpy trim
+	' loops own the RA/OA dampers; every other caller gets scheduled positions.
+	If skipDampers <> True Then
+		changeControl ahu1RAdamperMode, ahu1RAdamper, raDamper1, "manual"
+		changeControl ahu2RAdamperMode, ahu2RAdamper, raDamper2, "manual"
+		changeControl ahu1OAdamperMode, ahu1OAdamper, oaDamper1, "manual"
+		changeControl ahu2OAdamperMode, ahu2OAdamper, oaDamper2, "manual"
+	End If
 	If nosp = True Then
 		changeControl ahu1BlowerMode, ahu1BlowerControl, blowerControl1, "manual"
 		changeControl ahu2BlowerMode, ahu2BlowerControl, blowerControl2, "manual"
@@ -386,7 +390,13 @@ Sub applyCoolingRow(r)
 	End If
 	sp = dischargeSp(r(6), r(7))
 	dataWindow.value = coolingLabel()
+	skipDampers = (enthMaintain.value = True)
 	ScenarioA r(1), r(1), r(2), r(2), r(3), r(3), hv4, r(5), r(5), sp, sp, sp, sp, True
+	If skipDampers = True Then
+		Call EnthalpyTrim1(currentMinutes)
+		Call EnthalpyTrim2(currentMinutes)
+	End If
+	skipDampers = False
 End Sub
 ' Cooling schedule dispatch. Returns True if a row was applied; returns
 ' False ONLY for a chiller-OFF sub-72 band, so the caller runs free cooling.
@@ -793,4 +803,63 @@ Function FreeCoolPct(maE, oaE)
 	If p < 0 Then p = 0
 	If p > 100 Then p = 100
 	FreeCoolPct = p
+End Function
+
+' --- Enthalpy-driven damper trim (mechanical cooling only) ------------------
+' Feedback loop on each AHU's own mixed-air enthalpy vs the maEnthSp target.
+' Enabled by the enthMaintain checkbox; applyCoolingRow then skips the
+' scheduled RA/OA damper writes and these loops nudge the dampers instead.
+' Steps +/-1 on the half hour (same cadence as StaticPressureEast/West),
+' toward the cooler airstream when above target, warmer when below, held
+' inside the pressurization clamps. Free cooling and heating are untouched.
+Const ENTH_DB     = 0.5    ' deadband, Btu/lb - no move inside target +/- this
+Const ENTH_RA_MIN = 40     ' RA % closed floor  (40/40 building-pressure floor)
+Const ENTH_RA_MAX = 50     ' RA % closed ceiling
+Const ENTH_OA_MIN = 40     ' OA % open floor
+Const ENTH_OA_MAX = 55     ' OA % open ceiling (east-static envelope)
+
+' Shared step logic: returns -1, 0, or +1 (direction to shift OA fraction).
+Function enthTrimStep(hMA, tgt, oaT, raT)
+	enthTrimStep = 0
+	If hMA > tgt + ENTH_DB Then
+		' MA too warm: shift toward the cooler airstream
+		If oaT < raT Then enthTrimStep = 1 Else enthTrimStep = -1
+	ElseIf hMA < tgt - ENTH_DB Then
+		' MA too cold: shift toward the warmer airstream
+		If oaT < raT Then enthTrimStep = -1 Else enthTrimStep = 1
+	End If
+End Function
+
+Function EnthalpyTrim1(timeCheck)
+	Dim hMA, stp, raPos, oaPos
+	If timeCheck <> 30 And timeCheck <> 0 Then Exit Function
+	If Not (IsNumeric(HtgDsch1.value) And IsNumeric(ahu2RH.value) And IsNumeric(maEnthSp.value) And IsNumeric(outsideTemp.value) And IsNumeric(ahu1RAtemp.value)) Then Exit Function
+	hMA = enthalpyIP(CDbl(HtgDsch1.value), CDbl(ahu2RH.value))
+	stp = enthTrimStep(hMA, CDbl(maEnthSp.value), CDbl(outsideTemp.value), CDbl(Abs(ahu1RAtemp.value)))
+	If stp = 0 Then Exit Function
+	raPos = CDbl(ahu1RAdamper.value) + stp
+	oaPos = CDbl(ahu1OAdamper.value) + stp
+	If raPos < ENTH_RA_MIN Then raPos = ENTH_RA_MIN
+	If raPos > ENTH_RA_MAX Then raPos = ENTH_RA_MAX
+	If oaPos < ENTH_OA_MIN Then oaPos = ENTH_OA_MIN
+	If oaPos > ENTH_OA_MAX Then oaPos = ENTH_OA_MAX
+	changeControl ahu1RAdamperMode, ahu1RAdamper, raPos, "manual"
+	changeControl ahu1OAdamperMode, ahu1OAdamper, oaPos, "manual"
+End Function
+
+Function EnthalpyTrim2(timeCheck)
+	Dim hMA, stp, raPos, oaPos
+	If timeCheck <> 30 And timeCheck <> 0 Then Exit Function
+	If Not (IsNumeric(HtgDsch2.value) And IsNumeric(ahu2RH.value) And IsNumeric(maEnthSp.value) And IsNumeric(outsideTemp.value) And IsNumeric(ahu2RAtemp.value)) Then Exit Function
+	hMA = enthalpyIP(CDbl(HtgDsch2.value), CDbl(ahu2RH.value))
+	stp = enthTrimStep(hMA, CDbl(maEnthSp.value), CDbl(outsideTemp.value), CDbl(Abs(ahu2RAtemp.value)))
+	If stp = 0 Then Exit Function
+	raPos = CDbl(ahu2RAdamper.value) + stp
+	oaPos = CDbl(ahu2OAdamper.value) + stp
+	If raPos < ENTH_RA_MIN Then raPos = ENTH_RA_MIN
+	If raPos > ENTH_RA_MAX Then raPos = ENTH_RA_MAX
+	If oaPos < ENTH_OA_MIN Then oaPos = ENTH_OA_MIN
+	If oaPos > ENTH_OA_MAX Then oaPos = ENTH_OA_MAX
+	changeControl ahu2RAdamperMode, ahu2RAdamper, raPos, "manual"
+	changeControl ahu2OAdamperMode, ahu2OAdamper, oaPos, "manual"
 End Function
