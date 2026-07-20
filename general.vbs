@@ -259,7 +259,7 @@ Function leavingEnthalpy(daTemp, Win)
 End Function
 ' Total airside heat load (Btu/hr), computed per air handler then summed.
 ' Each unit: entering enthalpy from its own HtgDsch temp + ahu2RH, leaving by
-' its own discharge temp (wet/dry judged independently). Each AHU = 55,000 CFM.
+' its own discharge temp (wet/dry judged independently). Effective 51,000 CFM/AHU.
 Function calculateLoad()
 	Dim s1, s2, da1, da2, t1, t2, rh
 	Dim cfm1, cfm2, hIn1, hIn2, Win1, Win2, hOut1, hOut2, load1, load2
@@ -756,8 +756,8 @@ Function WetBulbF(tempF, rhPercent)
 	If r < 1 Then r = 1
 	If r > 100 Then r = 100
 	c = (tempF - 32) * 5 / 9
-	tw = c * Atn(0.151977 * Sqr(r + 8.313659)) + Atn(c + r) - Atn(r - 1.676331) _
-		+ 0.00391838 * (r ^ 1.5) * Atn(0.023101 * r) - 4.686035
+	tw = c * Atn(0.151977 * Sqr(r + 8.313659)) + Atn(c + r) - Atn(r - 1.676331)
+	tw = tw + 0.00391838 * (r ^ 1.5) * Atn(0.023101 * r) - 4.686035
 	WetBulbF = tw * 9 / 5 + 32
 End Function
 
@@ -789,10 +789,6 @@ Function FreeCoolPct(maE, oaE)
 		Exit Function
 	End If
 	denom = maE - STAGE_ON
-	If denom <= 0 Then
-		FreeCoolPct = 0
-		Exit Function
-	End If
 	p = (maE - oaE) / denom * 100
 	If p < 0 Then p = 0
 	If p > 100 Then p = 100
