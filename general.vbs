@@ -393,8 +393,8 @@ Sub applyCoolingRow(r)
 	skipDampers = (enthMaintain.value = True)
 	ScenarioA r(1), r(1), r(2), r(2), r(3), r(3), hv4, r(5), r(5), sp, sp, sp, sp, True
 	If skipDampers = True Then
-		Call EnthalpyTrim1(currentMinutes)
-		Call EnthalpyTrim2(currentMinutes)
+		Call EnthalpyTrim1()
+		Call EnthalpyTrim2()
 	End If
 	skipDampers = False
 End Sub
@@ -809,7 +809,7 @@ End Function
 ' Feedback loop on each AHU's own mixed-air enthalpy vs the maEnthSp target.
 ' Enabled by the enthMaintain checkbox; applyCoolingRow then skips the
 ' scheduled RA/OA damper writes and these loops nudge the dampers instead.
-' Steps +/-1 on the half hour (same cadence as StaticPressureEast/West),
+' Steps +/-1 per pass (the script runs every minute, so max 1%/min slew),
 ' toward the cooler airstream when above target, warmer when below, held
 ' inside the pressurization clamps. Free cooling and heating are untouched.
 Const ENTH_DB     = 0.5    ' deadband, Btu/lb - no move inside target +/- this
@@ -830,9 +830,8 @@ Function enthTrimStep(hMA, tgt, oaT, raT)
 	End If
 End Function
 
-Function EnthalpyTrim1(timeCheck)
+Function EnthalpyTrim1( )
 	Dim hMA, stp, raPos, oaPos
-	If timeCheck <> 30 And timeCheck <> 0 Then Exit Function
 	If Not (IsNumeric(HtgDsch1.value) And IsNumeric(ahu2RH.value) And IsNumeric(maEnthSp.value) And IsNumeric(outsideTemp.value) And IsNumeric(ahu1RAtemp.value)) Then Exit Function
 	hMA = enthalpyIP(CDbl(HtgDsch1.value), CDbl(ahu2RH.value))
 	stp = enthTrimStep(hMA, CDbl(maEnthSp.value), CDbl(outsideTemp.value), CDbl(Abs(ahu1RAtemp.value)))
@@ -847,9 +846,8 @@ Function EnthalpyTrim1(timeCheck)
 	changeControl ahu1OAdamperMode, ahu1OAdamper, oaPos, "manual"
 End Function
 
-Function EnthalpyTrim2(timeCheck)
+Function EnthalpyTrim2( )
 	Dim hMA, stp, raPos, oaPos
-	If timeCheck <> 30 And timeCheck <> 0 Then Exit Function
 	If Not (IsNumeric(HtgDsch2.value) And IsNumeric(ahu2RH.value) And IsNumeric(maEnthSp.value) And IsNumeric(outsideTemp.value) And IsNumeric(ahu2RAtemp.value)) Then Exit Function
 	hMA = enthalpyIP(CDbl(HtgDsch2.value), CDbl(ahu2RH.value))
 	stp = enthTrimStep(hMA, CDbl(maEnthSp.value), CDbl(outsideTemp.value), CDbl(Abs(ahu2RAtemp.value)))
