@@ -501,236 +501,61 @@ Function condI ( )
 				htgSp2 = 53
 				ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
 End Function
-Function condK ( )
-				raDamper1 = 50
-				raDamper2 = 50
-				oaDamper1 = 100
-				oaDamper2 = 100
-				If spMaintain.value = True Then
-					Call StaticPressureEast(currentMinutes)
-					Call StaticPressureWest(currentMinutes)
-					nosp = False
-				Else
-					nosp = True
-				End If
-				blowerControl1 = 82
-				blowerControl2 = 82
-				hv4Damper = 50
-				rhSp1 =  HumidityAdjust( outsideTemp.value )
-				rhSp2 = HumidityAdjust( outsideTemp.value )
-				clgSp1 = 55
-				clgSp2 = 55
-				htgSp1 = 55
-				htgSp2 = 55
-				ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+' spMaintain checkbox -> hand the blowers to the static-pressure loops for
+' this pass. Returns the nosp flag for ScenarioA (False = static-pressure
+' loops own the fans, so skip the scheduled blower write).
+Function spMaintainNosp()
+	If spMaintain.value = True Then
+		Call StaticPressureEast(currentMinutes)
+		Call StaticPressureWest(currentMinutes)
+		spMaintainNosp = False
+	Else
+		spMaintainNosp = True
+	End If
 End Function
-Function condL ( )
-				raDamper1 = 50
-				raDamper2 = 50
-				oaDamper1 = 70
-				oaDamper2 = 70
-				If spMaintain.value = True Then
-					Call StaticPressureEast(currentMinutes)
-					Call StaticPressureWest(currentMinutes)
-					nosp = False
-				Else
-					nosp = True
-				End If
-				blowerControl1 = 82
-				blowerControl2 = 82
-				hv4Damper = 60
-				rhSp1 =  HumidityAdjust( outsideTemp.value )
-				rhSp2 = HumidityAdjust( outsideTemp.value )
-				clgSp1 = 55
-				clgSp2 = 55
-				htgSp1 = 55
-				htgSp2 = 55
-				ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
-End Function
-Function condM ( )
-				raDamper1 = 50
-				raDamper2 = 50
-				oaDamper1 = 65
-				oaDamper2 = 65
-				If spMaintain.value = True Then
-					Call StaticPressureEast(currentMinutes)
-					Call StaticPressureWest(currentMinutes)
-					nosp = False
-				Else
-					nosp = True
-				End If
-				blowerControl1 = 82
-				blowerControl2 = 82
-				hv4Damper = 60
-				rhSp1 =  HumidityAdjust( outsideTemp.value )
-				rhSp2 = HumidityAdjust( outsideTemp.value )
-				clgSp1 = 55
-				clgSp2 = 55
-				htgSp1 = 58
-				htgSp2 = 58
-				ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
-End Function
-Function condN ( )
-				raDamper1 = 50
-				raDamper2 = 50
-				oaDamper1 = 60
-				oaDamper2 = 60
-				If spMaintain.value = True Then
-					Call StaticPressureEast(currentMinutes)
-					Call StaticPressureWest(currentMinutes)
-					nosp = False
-				Else
-					nosp = True
-				End If
-				blowerControl1 = 88
-				blowerControl2 = 88
-				hv4Damper = 60
-				rhSp1 =  HumidityAdjust( outsideTemp.value )
-				rhSp2 = HumidityAdjust( outsideTemp.value )
-				clgSp1 = 55
-				clgSp2 = 55
-				htgSp1 = 60
-				htgSp2 = 60
-				ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
-End Function
-Function condO ( )
-				raDamper1 = 50
-				raDamper2 = 50
-				oaDamper1 = 55
-				oaDamper2 = 55
-				If spMaintain.value = True Then
-					Call StaticPressureEast(currentMinutes)
-					Call StaticPressureWest(currentMinutes)
-					nosp = False
-				Else
-					nosp = True
-				End If
-				blowerControl1 = 88
-				blowerControl2 = 88
-				hv4Damper = 60
-				rhSp1 =  HumidityAdjust( outsideTemp.value )
-				rhSp2 = HumidityAdjust( outsideTemp.value )
-				clgSp1 = 55
-				clgSp2 = 55
-				htgSp1 = 60
-				htgSp2 = 60
-				ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
-End Function
-Function condP ( )
-				raDamper1 = 50
-				raDamper2 = 50
-				oaDamper1 = 50
-				oaDamper2 = 50
-				If spMaintain.value = True Then
-					Call StaticPressureEast(currentMinutes)
-					Call StaticPressureWest(currentMinutes)
-					nosp = False
-				Else
-					nosp = True
-				End If
-				blowerControl1 = 86
-				blowerControl2 = 86
-				hv4Damper = 60
-				rhSp1 =  HumidityAdjust( outsideTemp.value )
-				rhSp2 = HumidityAdjust( outsideTemp.value )
-				clgSp1 = 55
-				clgSp2 = 55
-				htgSp1 = 60
-				htgSp2 = 60
-				ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
-End Function
-Function condQ ( )
-				raDamper1 = 45
-				raDamper2 =45
-				oaDamper1 = 45
-				oaDamper2 = 45
-				If spMaintain.value = True Then
-					Call StaticPressureEast(currentMinutes)
-					Call StaticPressureWest(currentMinutes)
-					nosp = False
-				Else
-					nosp = True
-				End If
-				blowerControl1 = 84
-				blowerControl2 = 84
-				hv4Damper = 60
-				rhSp1 =  HumidityAdjust( outsideTemp.value )
-				rhSp2 = HumidityAdjust( outsideTemp.value )
-				clgSp1 = 55
-				clgSp2 = 55
-				htgSp1 = 60
-				htgSp2 = 60
-				ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
-End Function
-Function condR ( )
-				raDamper1 = 45
-				raDamper2 = 45
-				oaDamper1 = 45
-				oaDamper2 = 45
-				If spMaintain.value = True Then
-					Call StaticPressureEast(currentMinutes)
-					Call StaticPressureWest(currentMinutes)
-					nosp = False
-				Else
-					nosp = True
-				End If
-				blowerControl1 = 84
-				blowerControl2 = 84
-				hv4Damper = 60
-				rhSp1 =  HumidityAdjust( outsideTemp.value )
-				rhSp2 = HumidityAdjust( outsideTemp.value )
-				clgSp1 = 55
-				clgSp2 = 55
-				htgSp1 = 60
-				htgSp2 = 60
-				ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
-End Function
-Function condS ( )
-				raDamper1 = 45
-				raDamper2 = 45
-				oaDamper1 = 45
-				oaDamper2 = 45
-				If spMaintain.value = True Then
-					Call StaticPressureEast(currentMinutes)
-					Call StaticPressureWest(currentMinutes)
-					nosp = False
-				Else
-					nosp = True
-				End If
-				blowerControl1 = 84
-				blowerControl2 = 84
-				hv4Damper = 60
-				rhSp1 = HumidityAdjust( outsideTemp.value )
-				rhSp2 = HumidityAdjust( outsideTemp.value )
-				clgSp1 = 55
-				clgSp2 = 55
-				htgSp1 = 60
-				htgSp2 = 60
-				ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
-End Function
-Function condT ( )
-			raDamper1 = 45
-			raDamper2 = 45
-			oaDamper1 = 45
-			oaDamper2 = 45
-				If spMaintain.value = True Then
-					Call StaticPressureEast(currentMinutes)
-					Call StaticPressureWest(currentMinutes)
-					nosp = False
-				Else
-					nosp = True
-				End If
-			blowerControl1 = 84
-			blowerControl2 = 84
-			hv4Damper = 60
-			rhSp1 = HumidityAdjust( outsideTemp.value )
-			rhSp2 = HumidityAdjust( outsideTemp.value )
-			clgSp1 = 55
-			clgSp2 = 55
-			htgSp1 = 60
-			htgSp2 = 60
-			nosp = True
-			ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+' Apply one heating schedule row (replaces condK-condT). rhSp is always
+' HumidityAdjust(oat); heating never runs the enthalpy trim loops.
+Sub applyHeatingRow(r, oat)
+	Dim nosp, rh
+	rh = HumidityAdjust(oat)
+	If r(7) Then
+		nosp = spMaintainNosp()
+	Else
+		nosp = True
+	End If
+	dataWindow.value = "Normal Heating Mode"
+	skipDampers = False
+	ScenarioA r(1), r(1), r(2), r(2), r(3), r(3), r(4), rh, rh, r(5), r(5), r(6), r(6), nosp
+End Sub
+' Heating schedule dispatch (mirrors dispatchCooling). Rows descend; the
+' first row with oat > lowBound wins, so bands are (lowBound, prevBound] -
+' identical to the old condK-condT ladder. The last row is an unconditional
+' deep-cold catch-all (old condT: any oat =< 0; spAllowed=False preserves the
+' net effect of condT's nosp=True override, which clobbered its
+' static-pressure writes anyway).
+' Row cols: lowBound, RAdamper, OAdamper, fan, hv4, clgSp, htgSp, spAllowed.
+Function dispatchHeating(oat)
+	Dim htgSched(8), i, r
+	dispatchHeating = False
+	If Not IsNumeric(oat) Then Exit Function
+	oat = CDbl(oat)
+	htgSched(0) = Array(40, 50, 100, 82, 50, 55, 55, True)
+	htgSched(1) = Array(35, 50,  70, 82, 60, 55, 55, True)
+	htgSched(2) = Array(30, 50,  65, 82, 60, 55, 58, True)
+	htgSched(3) = Array(25, 50,  60, 88, 60, 55, 60, True)
+	htgSched(4) = Array(20, 50,  55, 88, 60, 55, 60, True)
+	htgSched(5) = Array(15, 50,  50, 86, 60, 55, 60, True)
+	htgSched(6) = Array(10, 45,  45, 84, 60, 55, 60, True)
+	htgSched(7) = Array(0,  45,  45, 84, 60, 55, 60, True)
+	htgSched(8) = Array(0,  45,  45, 84, 60, 55, 60, False)
+	For i = 0 To UBound(htgSched)
+		r = htgSched(i)
+		If oat > r(0) Or i = UBound(htgSched) Then
+			applyHeatingRow r, oat
+			dispatchHeating = True
+			Exit Function
+		End If
+	Next
 End Function
 
 '==============================================================================

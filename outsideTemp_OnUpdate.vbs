@@ -49,29 +49,8 @@ If IsSelected = True Then
 					Call condI()
 				End If
 			End If
-		ElseIf outsideTemp.value =< 45 And outsideTemp.value > 0 Then
-			If outsideTemp.value =< 45 And outsideTemp.value > 40 Then
-				Call condK()
-			ElseIf outsideTemp.value  =< 40 And outsideTemp.value > 35 Then
-				Call condL()
-			ElseIf outsideTemp.value  =< 35 And outsideTemp.value > 30 Then
-				Call condM()
-			ElseIf outsideTemp.value  =< 30 And outsideTemp.value > 25 Then
-				Call condN()
-			ElseIf outsideTemp.value =< 25 And outsideTemp.value > 20 Then
-				Call condO()
-			ElseIf outsideTemp.value =< 20 And outsideTemp.value > 15 Then
-				Call condP()
-			ElseIf outsideTemp.value =< 15 And outsideTemp.value > 10 Then
-				Call condQ()
-			ElseIf outsideTemp.value =< 10 And outsideTemp.value >= 0 Then
-				Call condR()
-			Else
-				Call condS()
-			End If
-			dataWindow.value = "Normal Heating Mode"
-		ElseIf outsideTemp.value =< 0 Then
-			Call condT()
+		ElseIf outsideTemp.value =< 45 Then
+			dispatchHeating outsideTemp.value
 		Else
 			If hv4MAdamper.value <> 60 Then
 				hv4MAdamper.value = 60
