@@ -2,7 +2,7 @@ Class ControlField
 	Public value
 End Class
 
-Dim control, status, steamPressure, skipDampers, lastEnthSpFamily
+Dim control, status, steamPressure, skipDampers
 steamPressure = alphanum11.value - 1
 
 Function timeFetch ( )
@@ -634,8 +634,12 @@ End Function
 ' (dispatchCooling returns False there); anything warmer, or 45-72 with the
 ' chiller running, is mechanical cooling; below 45 is heating.
 Const ENTH_SP_COOL     = 26.2   ' cooling + free-cooling default target
-Const ENTH_SP_COOL_MIN = 22     ' mech-cooling floor: keep the chiller loaded
+Const ENTH_SP_COOL_MIN = 22     ' mech-cooling band floor: keep the chiller loaded
+Const ENTH_SP_COOL_MAX = 32     ' cool-family band ceiling
+Const ENTH_SP_FREE_MIN = 16     ' free-cooling band floor (no chiller to starve)
 Const ENTH_SP_HEAT     = 14     ' ~45F dry bulb at winter return RH
+Const ENTH_SP_HEAT_MIN = 12     ' heating band floor (~42F saturated)
+Const ENTH_SP_HEAT_MAX = 18     ' heating band ceiling (~55F at 50% RH)
 
 Function plantMode(oat)
 	plantMode = ""
@@ -649,26 +653,28 @@ Function plantMode(oat)
 	End If
 End Function
 
-' Seed maEnthSp with the mode default when the mode family changes (COOL and
-' FREE share one family - free air drives the same target as cooling, and
-' chiller cycling must not stomp an operator tweak). Inside mech cooling the
-' floor keeps the target high enough that the chiller stays loaded at low
-' load instead of being starved by cheap outside air.
+' Keep maEnthSp sane for the current mode - STATELESS, no marker variable:
+' the value itself declares its season. Inside the mode's band = operator
+' tweak, leave it alone (survives chiller cycling between COOL and FREE).
+' Outside the band (blank display field on load, leftover from the other
+' season, or a value that would starve the running chiller) = seed the mode
+' default. maEnthSp is a display-local field, so a display reload blanks it
+' and the OnLoad pass re-seeds - same workaround as always.
 Sub maintainEnthSp(oat)
-	Dim m, fam
+	Dim m, sp
 	m = plantMode(oat)
 	If m = "" Then Exit Sub
-	If m = "HEAT" Then fam = "HEAT" Else fam = "COOL"
-	If fam <> lastEnthSpFamily Then
-		If fam = "HEAT" Then
-			maEnthSp.value = ENTH_SP_HEAT
-		Else
-			maEnthSp.value = ENTH_SP_COOL
-		End If
-		lastEnthSpFamily = fam
+	If Not IsNumeric(maEnthSp.value) Then
+		If m = "HEAT" Then maEnthSp.value = ENTH_SP_HEAT Else maEnthSp.value = ENTH_SP_COOL
+		Exit Sub
 	End If
-	If m = "COOL" And IsNumeric(maEnthSp.value) Then
-		If CDbl(maEnthSp.value) < ENTH_SP_COOL_MIN Then maEnthSp.value = ENTH_SP_COOL_MIN
+	sp = CDbl(maEnthSp.value)
+	If m = "HEAT" Then
+		If sp < ENTH_SP_HEAT_MIN Or sp > ENTH_SP_HEAT_MAX Then maEnthSp.value = ENTH_SP_HEAT
+	ElseIf m = "FREE" Then
+		If sp < ENTH_SP_FREE_MIN Or sp > ENTH_SP_COOL_MAX Then maEnthSp.value = ENTH_SP_COOL
+	Else
+		If sp < ENTH_SP_COOL_MIN Or sp > ENTH_SP_COOL_MAX Then maEnthSp.value = ENTH_SP_COOL
 	End If
 End Sub
 
