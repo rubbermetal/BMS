@@ -14,6 +14,7 @@ currentMinutes = Minute(currentTime)
 currentSeconds = Second(currentTime)
 amOrPm =currentTime
 
+enthMaintain.value = True
 
 IsSelected = copilot.value
 If (currentHour >= 7) And (currentHour <15) Then
@@ -39,7 +40,6 @@ Dim TempEnth, avgRH
 
 If IsSelected = True Then
 
-		Call maintainMaSp(outsideTemp.value)
 		If outsideTemp.value >= 45 Then
 			If Not dispatchCooling(outsideTemp.value) Then
 				dispatchFreeCooling outsideTemp.value

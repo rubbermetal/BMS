@@ -585,73 +585,19 @@ Function FreeCoolPct(maE, oaE)
 	FreeCoolPct = p
 End Function
 
-' --- Plant mode & maEnthSp defaults -----------------------------------------
-' plantMode: what the plant should be doing at this OAT, using the same band
-' edges as the dispatch tables. 45-72 with the chiller off is free cooling
-' (dispatchCooling returns False there); anything warmer, or 45-72 with the
-' chiller running, is mechanical cooling; below 45 is heating.
-' The maEnthSp box holds the mixed-air TEMPERATURE target (deg F). COOL is
-' pre-coil (the chiller finishes the job) so it rides much warmer than FREE,
-' where the dampers ARE the cooling. COOL numbers are the dry-bulb
-' equivalents of the old enthalpy choices at ~50% return RH: 26.2 Btu/lb
-' ~ 72F, and the 22 chiller-loading floor ~ 64F.
-Const MA_SP_COOL     = 72     ' mech-cooling MA target default
-Const MA_SP_COOL_MIN = 64     ' mech-cooling band floor: keep the chiller loaded
-Const MA_SP_COOL_MAX = 80     ' mech-cooling band ceiling
-Const MA_SP_FREE     = 55     ' free-cooling MA target default (coil off: MA ~ discharge)
-Const MA_SP_FREE_MIN = 50     ' free-cooling band floor
-Const MA_SP_FREE_MAX = 60     ' free-cooling band ceiling
-Const MA_SP_HEAT     = 45     ' heating MA target default (operator practice)
-Const MA_SP_HEAT_MIN = 40     ' heating band floor (freeze-guard territory below)
-Const MA_SP_HEAT_MAX = 52     ' heating band ceiling
-
-Function plantMode(oat)
-	plantMode = ""
-	If Not IsNumeric(oat) Then Exit Function
-	If CDbl(oat) < 45 Then
-		plantMode = "HEAT"
-	ElseIf CDbl(oat) <= 72 And chillerStatus.value <> "ON" Then
-		plantMode = "FREE"
-	Else
-		plantMode = "COOL"
-	End If
-End Function
-
-' Keep the MA temp target sane for the current mode - STATELESS, no marker
-' variable: the value itself declares its regime. Inside the mode's band =
-' operator tweak, leave it alone. Outside it (blank display field on load,
-' or a leftover from another mode) = seed the mode default. COOL and FREE
-' targets differ (72 vs 55), so the target re-seeds when the chiller starts
-' or stops inside the 45-72 band - correct, the regimes need different
-' mixes. maEnthSp is a display-local field, so a display reload blanks it
-' and the OnLoad pass re-seeds - same workaround as always.
-Sub maintainMaSp(oat)
-	Dim m, sp
-	m = plantMode(oat)
-	If m = "" Then Exit Sub
-	If Not IsNumeric(maEnthSp.value) Then
-		If m = "HEAT" Then
-			maEnthSp.value = MA_SP_HEAT
-		ElseIf m = "FREE" Then
-			maEnthSp.value = MA_SP_FREE
-		Else
-			maEnthSp.value = MA_SP_COOL
-		End If
-		Exit Sub
-	End If
-	sp = CDbl(maEnthSp.value)
-	If m = "HEAT" Then
-		If sp < MA_SP_HEAT_MIN Or sp > MA_SP_HEAT_MAX Then maEnthSp.value = MA_SP_HEAT
-	ElseIf m = "FREE" Then
-		If sp < MA_SP_FREE_MIN Or sp > MA_SP_FREE_MAX Then maEnthSp.value = MA_SP_FREE
-	Else
-		If sp < MA_SP_COOL_MIN Or sp > MA_SP_COOL_MAX Then maEnthSp.value = MA_SP_COOL
-	End If
-End Sub
+' --- Per-mode mixed-air temp targets ----------------------------------------
+' Set here in script - no operator graphic, no seeding, nothing to persist:
+' each trim wrapper passes its own mode's target. COOL is pre-coil (the
+' chiller finishes the job) so it rides much warmer than FREE, where the
+' dampers ARE the cooling; COOL is the dry-bulb equivalent of the old 26.2
+' Btu/lb enthalpy target at ~50% return RH.
+Const MA_SP_COOL = 72     ' mech-cooling MA target
+Const MA_SP_FREE = 55     ' free-cooling MA target (coil off: MA ~ discharge)
+Const MA_SP_HEAT = 45     ' heating MA target (operator practice)
 
 ' --- Temperature-driven damper trim (mechanical cooling) --------------------
 ' Feedback loop on each AHU's own mixed-air TEMP (ahuXMA sensor) vs the
-' maEnthSp target in deg F. Enabled by the enthMaintain checkbox;
+' MA_SP_COOL target in deg F. Enabled by the enthMaintain checkbox;
 ' applyCoolingRow then skips the scheduled RA/OA damper writes and these
 ' loops nudge the dampers instead, inside the pressurization clamps.
 ' Direction picks the airstream by dry bulb (OAT vs RA temp) - coherent
@@ -677,16 +623,16 @@ Function tempTrimStep(tMA, tgt, oaT, raT)
 End Function
 
 Function EnthalpyTrim1( )
-	tempDamperTrim HtgDsch1, ahu1MA, ahu1RAtemp, ahu1RAdamperMode, ahu1RAdamper, ahu1OAdamperMode, ahu1OAdamper, ENTH_RA_MIN, ENTH_RA_MAX, ENTH_OA_MIN, ENTH_OA_MAX
+	tempDamperTrim HtgDsch1, ahu1MA, ahu1RAtemp, MA_SP_COOL, ahu1RAdamperMode, ahu1RAdamper, ahu1OAdamperMode, ahu1OAdamper, ENTH_RA_MIN, ENTH_RA_MAX, ENTH_OA_MIN, ENTH_OA_MAX
 End Function
 
 Function EnthalpyTrim2( )
-	tempDamperTrim HtgDsch2, ahu2MA, ahu2RAtemp, ahu2RAdamperMode, ahu2RAdamper, ahu2OAdamperMode, ahu2OAdamper, ENTH_RA_MIN, ENTH_RA_MAX, ENTH_OA_MIN, ENTH_OA_MAX
+	tempDamperTrim HtgDsch2, ahu2MA, ahu2RAtemp, MA_SP_COOL, ahu2RAdamperMode, ahu2RAdamper, ahu2OAdamperMode, ahu2OAdamper, ENTH_RA_MIN, ENTH_RA_MAX, ENTH_OA_MIN, ENTH_OA_MAX
 End Function
 
 ' --- Free-cooling / heating damper trim (testing branch) --------------------
 ' Same loop as mech cooling with the wider envelopes: each AHU's dampers
-' step +/-1 per pass to hold the ahuXMA temp at the maEnthSp target while
+' step +/-1 per pass to hold the ahuXMA temp at the mode's MA_SP target while
 ' the static-pressure loops hold building static on the blowers. The
 ' mechanical freeze stat lives in the HEATING DISCHARGE, not the mixed-air
 ' chamber: MA may run below 32 as long as the discharge holds, so a cold MA
@@ -722,22 +668,22 @@ Const HT_RA_MAX = 50
 Const HT_OA_MIN = 40
 Const HT_OA_MAX = 95
 
-' Shared trim body (all modes; clamps from caller). Steps one AHU's dampers
-' +/-1 per pass to hold its MA sensor at the maEnthSp temp target, with the
+' Shared trim body (all modes; target and clamps from caller). Steps one
+' AHU's dampers +/-1 per pass to hold its MA sensor at tgt (deg F), with the
 ' freeze protections: discharge below FC_HTG_LOW forces the corrective
 ' position (RA fully open, OA 30); MA at/below FC_MA_COLD blocks OA-ward
 ' steps. Watching the true MA sensor (not HtgDsch) keeps this loop off the
 ' heating valve's measured variable - dampers own MA, valve owns discharge.
-Sub tempDamperTrim(dschPt, maPt, raTempPt, raMode, raPt, oaMode, oaPt, raLo, raHi, oaLo, oaHi)
+Sub tempDamperTrim(dschPt, maPt, raTempPt, tgt, raMode, raPt, oaMode, oaPt, raLo, raHi, oaLo, oaHi)
 	Dim tMA, stp, raPos, oaPos
-	If Not (IsNumeric(dschPt.value) And IsNumeric(maEnthSp.value) And IsNumeric(outsideTemp.value) And IsNumeric(raTempPt.value) And IsNumeric(maPt.value)) Then Exit Sub
+	If Not (IsNumeric(dschPt.value) And IsNumeric(outsideTemp.value) And IsNumeric(raTempPt.value) And IsNumeric(maPt.value)) Then Exit Sub
 	If CDbl(dschPt.value) < FC_HTG_LOW Then
 		changeControl raMode, raPt, FC_RCV_RA, "manual"
 		changeControl oaMode, oaPt, FC_RCV_OA, "manual"
 		Exit Sub
 	End If
 	tMA = CDbl(Abs(maPt.value))
-	stp = tempTrimStep(tMA, CDbl(maEnthSp.value), CDbl(outsideTemp.value), CDbl(Abs(raTempPt.value)))
+	stp = tempTrimStep(tMA, tgt, CDbl(outsideTemp.value), CDbl(Abs(raTempPt.value)))
 	If tMA <= FC_MA_COLD And stp > 0 Then stp = 0
 	raPos = fcTrimPos(CDbl(raPt.value), stp, raLo, raHi)
 	oaPos = fcTrimPos(CDbl(oaPt.value), stp, oaLo, oaHi)
@@ -746,17 +692,17 @@ Sub tempDamperTrim(dschPt, maPt, raTempPt, raMode, raPt, oaMode, oaPt, raLo, raH
 End Sub
 
 Function FreeCoolTrim1( )
-	tempDamperTrim HtgDsch1, ahu1MA, ahu1RAtemp, ahu1RAdamperMode, ahu1RAdamper, ahu1OAdamperMode, ahu1OAdamper, FC_RA_MIN, FC_RA_MAX, FC_OA_MIN, FC_OA_MAX
+	tempDamperTrim HtgDsch1, ahu1MA, ahu1RAtemp, MA_SP_FREE, ahu1RAdamperMode, ahu1RAdamper, ahu1OAdamperMode, ahu1OAdamper, FC_RA_MIN, FC_RA_MAX, FC_OA_MIN, FC_OA_MAX
 End Function
 
 Function FreeCoolTrim2( )
-	tempDamperTrim HtgDsch2, ahu2MA, ahu2RAtemp, ahu2RAdamperMode, ahu2RAdamper, ahu2OAdamperMode, ahu2OAdamper, FC_RA_MIN, FC_RA_MAX, FC_OA_MIN, FC_OA_MAX
+	tempDamperTrim HtgDsch2, ahu2MA, ahu2RAtemp, MA_SP_FREE, ahu2RAdamperMode, ahu2RAdamper, ahu2OAdamperMode, ahu2OAdamper, FC_RA_MIN, FC_RA_MAX, FC_OA_MIN, FC_OA_MAX
 End Function
 
 Function HeatTrim1( )
-	tempDamperTrim HtgDsch1, ahu1MA, ahu1RAtemp, ahu1RAdamperMode, ahu1RAdamper, ahu1OAdamperMode, ahu1OAdamper, HT_RA_MIN, HT_RA_MAX, HT_OA_MIN, HT_OA_MAX
+	tempDamperTrim HtgDsch1, ahu1MA, ahu1RAtemp, MA_SP_HEAT, ahu1RAdamperMode, ahu1RAdamper, ahu1OAdamperMode, ahu1OAdamper, HT_RA_MIN, HT_RA_MAX, HT_OA_MIN, HT_OA_MAX
 End Function
 
 Function HeatTrim2( )
-	tempDamperTrim HtgDsch2, ahu2MA, ahu2RAtemp, ahu2RAdamperMode, ahu2RAdamper, ahu2OAdamperMode, ahu2OAdamper, HT_RA_MIN, HT_RA_MAX, HT_OA_MIN, HT_OA_MAX
+	tempDamperTrim HtgDsch2, ahu2MA, ahu2RAtemp, MA_SP_HEAT, ahu2RAdamperMode, ahu2RAdamper, ahu2OAdamperMode, ahu2OAdamper, HT_RA_MIN, HT_RA_MAX, HT_OA_MIN, HT_OA_MAX
 End Function
