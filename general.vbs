@@ -501,18 +501,29 @@ Function spMaintainNosp()
 	End If
 End Function
 ' Apply one heating schedule row (replaces condK-condT). rhSp is always
-' HumidityAdjust(oat); heating never runs the enthalpy trim loops.
+' HumidityAdjust(oat).
+' enthMaintain: the heat trim loops own the RA/OA dampers (ScenarioA skips
+' them via skipDampers) and the static-pressure loops own the fans.
 Sub applyHeatingRow(r, oat)
 	Dim nosp, rh
 	rh = HumidityAdjust(oat)
-	If r(7) Then
+	skipDampers = (enthMaintain.value = True)
+	If skipDampers = True Then
+		Call StaticPressureEast(currentMinutes)
+		Call StaticPressureWest(currentMinutes)
+		nosp = False
+	ElseIf r(7) Then
 		nosp = spMaintainNosp()
 	Else
 		nosp = True
 	End If
 	dataWindow.value = "Normal Heating Mode"
-	skipDampers = False
 	ScenarioA r(1), r(1), r(2), r(2), r(3), r(3), r(4), rh, rh, r(5), r(5), r(6), r(6), nosp
+	If skipDampers = True Then
+		Call HeatTrim1()
+		Call HeatTrim2()
+	End If
+	skipDampers = False
 End Sub
 ' Heating schedule dispatch (mirrors dispatchCooling). Rows descend; the
 ' first row with oat > lowBound wins, so bands are (lowBound, prevBound] -
@@ -705,36 +716,46 @@ Function fcTrimPos(cur, stp, lo, hi)
 	fcTrimPos = p
 End Function
 
-Function FreeCoolTrim1( )
+' Heating envelope: RA matches the heating schedule's band (45-50 closed);
+' OA floor/ceiling per operator spec (static floor 40, 95 max).
+Const HT_RA_MIN = 45
+Const HT_RA_MAX = 50
+Const HT_OA_MIN = 40
+Const HT_OA_MAX = 95
+
+' Shared cold-season trim body (free cooling + heating; clamps from caller).
+' Steps one AHU's dampers +/-1 per pass toward maEnthSp, with the freeze
+' protections: discharge below FC_HTG_LOW forces the corrective position
+' (RA fully open, OA 30); MA at/below FC_MA_COLD blocks OA-ward steps.
+Sub enthDamperTrim(dschPt, maPt, raTempPt, raMode, raPt, oaMode, oaPt, raLo, raHi, oaLo, oaHi)
 	Dim hMA, stp, raPos, oaPos
-	If Not (IsNumeric(HtgDsch1.value) And IsNumeric(ahu2RH.value) And IsNumeric(maEnthSp.value) And IsNumeric(outsideTemp.value) And IsNumeric(ahu1RAtemp.value) And IsNumeric(ahu1MA.value)) Then Exit Function
-	If CDbl(HtgDsch1.value) < FC_HTG_LOW Then
-		changeControl ahu1RAdamperMode, ahu1RAdamper, FC_RCV_RA, "manual"
-		changeControl ahu1OAdamperMode, ahu1OAdamper, FC_RCV_OA, "manual"
-		Exit Function
+	If Not (IsNumeric(dschPt.value) And IsNumeric(ahu2RH.value) And IsNumeric(maEnthSp.value) And IsNumeric(outsideTemp.value) And IsNumeric(raTempPt.value) And IsNumeric(maPt.value)) Then Exit Sub
+	If CDbl(dschPt.value) < FC_HTG_LOW Then
+		changeControl raMode, raPt, FC_RCV_RA, "manual"
+		changeControl oaMode, oaPt, FC_RCV_OA, "manual"
+		Exit Sub
 	End If
-	hMA = enthalpyIP(CDbl(HtgDsch1.value), CDbl(ahu2RH.value))
-	stp = enthTrimStep(hMA, CDbl(maEnthSp.value), CDbl(outsideTemp.value), CDbl(Abs(ahu1RAtemp.value)))
-	If CDbl(ahu1MA.value) <= FC_MA_COLD And stp > 0 Then stp = 0
-	raPos = fcTrimPos(CDbl(ahu1RAdamper.value), stp, FC_RA_MIN, FC_RA_MAX)
-	oaPos = fcTrimPos(CDbl(ahu1OAdamper.value), stp, FC_OA_MIN, FC_OA_MAX)
-	changeControl ahu1RAdamperMode, ahu1RAdamper, raPos, "manual"
-	changeControl ahu1OAdamperMode, ahu1OAdamper, oaPos, "manual"
+	hMA = enthalpyIP(CDbl(dschPt.value), CDbl(ahu2RH.value))
+	stp = enthTrimStep(hMA, CDbl(maEnthSp.value), CDbl(outsideTemp.value), CDbl(Abs(raTempPt.value)))
+	If CDbl(maPt.value) <= FC_MA_COLD And stp > 0 Then stp = 0
+	raPos = fcTrimPos(CDbl(raPt.value), stp, raLo, raHi)
+	oaPos = fcTrimPos(CDbl(oaPt.value), stp, oaLo, oaHi)
+	changeControl raMode, raPt, raPos, "manual"
+	changeControl oaMode, oaPt, oaPos, "manual"
+End Sub
+
+Function FreeCoolTrim1( )
+	enthDamperTrim HtgDsch1, ahu1MA, ahu1RAtemp, ahu1RAdamperMode, ahu1RAdamper, ahu1OAdamperMode, ahu1OAdamper, FC_RA_MIN, FC_RA_MAX, FC_OA_MIN, FC_OA_MAX
 End Function
 
 Function FreeCoolTrim2( )
-	Dim hMA, stp, raPos, oaPos
-	If Not (IsNumeric(HtgDsch2.value) And IsNumeric(ahu2RH.value) And IsNumeric(maEnthSp.value) And IsNumeric(outsideTemp.value) And IsNumeric(ahu2RAtemp.value) And IsNumeric(ahu2MA.value)) Then Exit Function
-	If CDbl(HtgDsch2.value) < FC_HTG_LOW Then
-		changeControl ahu2RAdamperMode, ahu2RAdamper, FC_RCV_RA, "manual"
-		changeControl ahu2OAdamperMode, ahu2OAdamper, FC_RCV_OA, "manual"
-		Exit Function
-	End If
-	hMA = enthalpyIP(CDbl(HtgDsch2.value), CDbl(ahu2RH.value))
-	stp = enthTrimStep(hMA, CDbl(maEnthSp.value), CDbl(outsideTemp.value), CDbl(Abs(ahu2RAtemp.value)))
-	If CDbl(ahu2MA.value) <= FC_MA_COLD And stp > 0 Then stp = 0
-	raPos = fcTrimPos(CDbl(ahu2RAdamper.value), stp, FC_RA_MIN, FC_RA_MAX)
-	oaPos = fcTrimPos(CDbl(ahu2OAdamper.value), stp, FC_OA_MIN, FC_OA_MAX)
-	changeControl ahu2RAdamperMode, ahu2RAdamper, raPos, "manual"
-	changeControl ahu2OAdamperMode, ahu2OAdamper, oaPos, "manual"
+	enthDamperTrim HtgDsch2, ahu2MA, ahu2RAtemp, ahu2RAdamperMode, ahu2RAdamper, ahu2OAdamperMode, ahu2OAdamper, FC_RA_MIN, FC_RA_MAX, FC_OA_MIN, FC_OA_MAX
+End Function
+
+Function HeatTrim1( )
+	enthDamperTrim HtgDsch1, ahu1MA, ahu1RAtemp, ahu1RAdamperMode, ahu1RAdamper, ahu1OAdamperMode, ahu1OAdamper, HT_RA_MIN, HT_RA_MAX, HT_OA_MIN, HT_OA_MAX
+End Function
+
+Function HeatTrim2( )
+	enthDamperTrim HtgDsch2, ahu2MA, ahu2RAtemp, ahu2RAdamperMode, ahu2RAdamper, ahu2OAdamperMode, ahu2OAdamper, HT_RA_MIN, HT_RA_MAX, HT_OA_MIN, HT_OA_MAX
 End Function
