@@ -12,14 +12,13 @@ Function timeFetch ( )
 
 End Function
 
+' Return-air dew point (deg F) for the DewPoint text box. Thin wrapper over
+' calculateDP (Magnus-Tetens) with the same inputs the handlers use:
+' ahu2RH only - ahu1RH reads high (boiler-room humidity).
 Function dp ( )
-	a = 17.27
-	b = 237.7
-	avgRaTemp = (((CDbl(Abs(ahu2RAtemp.value)) + CDbl(Abs(ahu1RAtemp.value))) / 2) - 32)  *  5 / 9
-	avgRaRh = (CDbl(ahu1RH.value) + CDbl(ahu2RH.value)) / 2
-	avgRaRhFormatted = avgRaRh / 100
-
-	dp =  RoundToOneDecimal(((avgRaTemp  -  ((100 - avgRaRh) / 5)) * 1.8) + 32) 
+	Dim avgRaTemp
+	avgRaTemp = (CDbl(Abs(ahu2RAtemp.value)) + CDbl(Abs(ahu1RAtemp.value))) / 2
+	dp = calculateDP(avgRaTemp, CDbl(ahu2RH.value))
 End Function
 Function chillerMode(  )
 	Dim ra, sa, diff
@@ -139,45 +138,6 @@ Function AlarmStatus(  )
 		Set player = Nothing
 		alarmSilence.value = True
 		Exit Function
-	End If
-End Function
-
-Function dupControl( )
-	Dim ahu2HtHi, ahu2HtLo, ahu2HtLoMode, ahu2HtHiMode, ahu1HtHi, ahu1HtLo, ahu1HtHiMode, ahu1HtLoMode
-
-	ahu2HtHi = numPad(ahu2HtSpHi.value)
-	ahu2HtLo = numPad(ahu2HtSpLo.value)
-	ahu2HtHiMode = ahu2HtSpHiMode.value
-	ahu2HtLoMode = ahu2HtSpLoMode.value
-
-	ahu1HtHi = numPad(ahu1HtSpHi.value)
-	ahu1HtLo = numPad(ahu1HtSpLo.value)
-	ahu1HtHiMode = ahu1HtSpHiMode.value
-	ahu1HtLoMode = ahu1HtSpLoMode.value
-
-	' If ahu1 Heat Hi set point is in auto then put Ahu2 in auto
-	If ahu1HtSpHiMode.value <> True And ahu2HtSpHiMode.value <> False Then
-		ahu2HtSpHiMode.value = False
-	End If
-	' If ahu1 Heat Lo set point is in auto then put Ahu2 in auto
-	If ahu1HtSpLoMode.value <> True And ahu2HtSpLoMode.value <> False Then
-		ahu2HtSpLoMode.value = False
-	End If
-	' If ahu1 Heat Hi set point is in Manual then put Ahu2 in Manual
-	If ahu1HtSpHiMode.value <> False And ahu2HtSpHiMode.value <> True Then
-		ahu2HtSpHiMode.value = True
-	End If
-	' If ahu1 Heat Lo set point is in Manual then put Ahu2 in Manual
-	If ahu1HtSpLoMode.value <> False And ahu2HtSpLoMode.value <> True Then
-		ahu2HtSpLoMode.value = True
-	End If
-	' If ahu2 heat hi set pont doesn't match ahu1 then update it to match
-	If ahu2HtHi <> ahu1HtHi And ahu2HtHiMode <> False Then
-		ahu2HtSpHi.value = ahu1HtSpHi.value
-	End If
-	' If ahu2 heat lo set pont doesn't match ahu1 then update it to match
-	If ahu2HtLo <> ahu1HtLo And ahu2HtLoMode <> False Then
-		ahu2HtSpLo.value = ahu1HtSpLo.value
 	End If
 End Function
 
