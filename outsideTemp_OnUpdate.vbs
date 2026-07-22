@@ -14,6 +14,8 @@ currentMinutes = Minute(currentTime)
 currentSeconds = Second(currentTime)
 amOrPm =currentTime
 
+enthMaintain.value = true
+maEnthSp.value = 26.2	
 
 IsSelected = copilot.value
 If (currentHour >= 7) And (currentHour <15) Then
