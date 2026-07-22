@@ -442,16 +442,27 @@ Function dispatchCooling(oat)
 	Next
 End Function
 ' Apply one free-cooling schedule row (replaces condE/condG/condI).
+' enthMaintain: the free-cool trim loops own the RA/OA dampers (ScenarioA
+' skips them via skipDampers) and the static-pressure loops own the fans.
 Sub applyFreeCoolRow(r)
 	Dim nosp
-	If r(8) Then
+	skipDampers = (enthMaintain.value = True)
+	If skipDampers = True Then
+		Call StaticPressureEast(currentMinutes)
+		Call StaticPressureWest(currentMinutes)
+		nosp = False
+	ElseIf r(8) Then
 		nosp = spMaintainNosp()
 	Else
 		nosp = True
 	End If
 	dataWindow.value = "Free Cooling Mode"
-	skipDampers = False
 	ScenarioA r(1), r(1), r(2), r(2), r(3), r(3), r(4), r(5), r(5), r(6), r(6), r(7), r(7), nosp
+	If skipDampers = True Then
+		Call FreeCoolTrim1()
+		Call FreeCoolTrim2()
+	End If
+	skipDampers = False
 End Sub
 ' Free-cooling schedule dispatch (replaces condE/condG/condI). Only reached
 ' when dispatchCooling returned False (chiller OFF, sub-72 band) and OAT is
@@ -659,6 +670,71 @@ Function EnthalpyTrim2( )
 	If raPos > ENTH_RA_MAX Then raPos = ENTH_RA_MAX
 	If oaPos < ENTH_OA_MIN Then oaPos = ENTH_OA_MIN
 	If oaPos > ENTH_OA_MAX Then oaPos = ENTH_OA_MAX
+	changeControl ahu2RAdamperMode, ahu2RAdamper, raPos, "manual"
+	changeControl ahu2OAdamperMode, ahu2OAdamper, oaPos, "manual"
+End Function
+
+' --- Free-cooling enthalpy trim (testing branch) ----------------------------
+' Same idea as the mechanical-cooling EnthalpyTrim loops, with the wider
+' free-cooling envelope: each AHU's dampers step +/-1 per pass toward the
+' maEnthSp target while the static-pressure loops hold building static on the
+' blowers. The mechanical freeze stat lives in the HEATING DISCHARGE, not the
+' mixed-air chamber: MA may run below 32 as long as the discharge holds, so a
+' cold MA only blocks further outside-air steps (efficiency - keep a decent MA
+' while we can), while a discharge below 40 forces the corrective position
+' (RA fully open, OA 30) immediately.
+Const FC_RA_MIN  = 65    ' RA % closed floor
+Const FC_RA_MAX  = 95    ' RA % closed ceiling
+Const FC_OA_MIN  = 40    ' OA % open floor (building static)
+Const FC_OA_MAX  = 95    ' OA % open ceiling
+Const FC_MA_COLD = 32    ' MA at/below this: no further OA-ward steps
+Const FC_HTG_LOW = 40    ' htg discharge below this: freeze recovery
+Const FC_RCV_RA  = 0     ' recovery: RA fully open
+Const FC_RCV_OA  = 30    ' recovery: OA 30 %
+
+' Step then clamp, but never move more than 1 from the current position -
+' after a freeze recovery parks the dampers outside the clamps (RA 0 / OA 30)
+' this walks them back into range gradually instead of slamming to the floor.
+Function fcTrimPos(cur, stp, lo, hi)
+	Dim p
+	p = cur + stp
+	If p < lo Then p = lo
+	If p > hi Then p = hi
+	If p > cur + 1 Then p = cur + 1
+	If p < cur - 1 Then p = cur - 1
+	fcTrimPos = p
+End Function
+
+Function FreeCoolTrim1( )
+	Dim hMA, stp, raPos, oaPos
+	If Not (IsNumeric(HtgDsch1.value) And IsNumeric(ahu2RH.value) And IsNumeric(maEnthSp.value) And IsNumeric(outsideTemp.value) And IsNumeric(ahu1RAtemp.value) And IsNumeric(ahu1MA.value)) Then Exit Function
+	If CDbl(HtgDsch1.value) < FC_HTG_LOW Then
+		changeControl ahu1RAdamperMode, ahu1RAdamper, FC_RCV_RA, "manual"
+		changeControl ahu1OAdamperMode, ahu1OAdamper, FC_RCV_OA, "manual"
+		Exit Function
+	End If
+	hMA = enthalpyIP(CDbl(HtgDsch1.value), CDbl(ahu2RH.value))
+	stp = enthTrimStep(hMA, CDbl(maEnthSp.value), CDbl(outsideTemp.value), CDbl(Abs(ahu1RAtemp.value)))
+	If CDbl(ahu1MA.value) <= FC_MA_COLD And stp > 0 Then stp = 0
+	raPos = fcTrimPos(CDbl(ahu1RAdamper.value), stp, FC_RA_MIN, FC_RA_MAX)
+	oaPos = fcTrimPos(CDbl(ahu1OAdamper.value), stp, FC_OA_MIN, FC_OA_MAX)
+	changeControl ahu1RAdamperMode, ahu1RAdamper, raPos, "manual"
+	changeControl ahu1OAdamperMode, ahu1OAdamper, oaPos, "manual"
+End Function
+
+Function FreeCoolTrim2( )
+	Dim hMA, stp, raPos, oaPos
+	If Not (IsNumeric(HtgDsch2.value) And IsNumeric(ahu2RH.value) And IsNumeric(maEnthSp.value) And IsNumeric(outsideTemp.value) And IsNumeric(ahu2RAtemp.value) And IsNumeric(ahu2MA.value)) Then Exit Function
+	If CDbl(HtgDsch2.value) < FC_HTG_LOW Then
+		changeControl ahu2RAdamperMode, ahu2RAdamper, FC_RCV_RA, "manual"
+		changeControl ahu2OAdamperMode, ahu2OAdamper, FC_RCV_OA, "manual"
+		Exit Function
+	End If
+	hMA = enthalpyIP(CDbl(HtgDsch2.value), CDbl(ahu2RH.value))
+	stp = enthTrimStep(hMA, CDbl(maEnthSp.value), CDbl(outsideTemp.value), CDbl(Abs(ahu2RAtemp.value)))
+	If CDbl(ahu2MA.value) <= FC_MA_COLD And stp > 0 Then stp = 0
+	raPos = fcTrimPos(CDbl(ahu2RAdamper.value), stp, FC_RA_MIN, FC_RA_MAX)
+	oaPos = fcTrimPos(CDbl(ahu2OAdamper.value), stp, FC_OA_MIN, FC_OA_MAX)
 	changeControl ahu2RAdamperMode, ahu2RAdamper, raPos, "manual"
 	changeControl ahu2OAdamperMode, ahu2OAdamper, oaPos, "manual"
 End Function
