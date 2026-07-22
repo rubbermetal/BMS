@@ -3,6 +3,7 @@ Class ControlField
 End Class
 
 Dim control, status, steamPressure, skipDampers
+Dim alarmPlayer   ' global: keeps the WMP object alive after AlarmStatus returns
 steamPressure = alphanum11.value - 1
 
 Function timeFetch ( )
@@ -108,36 +109,32 @@ Function HumidityAdjust ( t  )
 	HumidityAdjust = x
 End Function
 
+' Play the matching alarm sound while a blower alarm is active (value 3 =
+' normal). Non-blocking: the player object lives in the script-level
+' alarmPlayer global, so it survives this function returning and the clip
+' actually plays - the old MsgBox workaround (which blocked the script) and
+' the auto-set of alarmSilence are gone. alarmSilence is now purely a manual
+' mute: checked = quiet. The clip replays each pass while the alarm stands
+' (playState 3 = playing, 9 = starting up; don't restart mid-clip), and
+' playback stops once everything reads normal.
 Function AlarmStatus(  )
- 	Dim player
-	Dim IsPlaying
-	
-	
-	' hv4Alarm.value = 3 is normal, no alarm
-	If hv4Alarm.value <> 3  And alarmSilence.value <> True Then
-		Set player = CreateObject("WMPlayer.OCX")
-		player.URL = "C:\Program Files\Honeywell\client\abstract\hv4-blower-alarm.mp3"
-		player.Controls.play
-		'MsgBox "HV4 is in alarm, blower is offline."
-		Set player = Nothing
-		alarmSilence.value = True
+	Dim src
+	src = ""
+	If hv4Alarm.value <> 3 Then
+		src = "C:\Program Files\Honeywell\client\abstract\hv4-blower-alarm.mp3"
+	ElseIf ahu2Alarm.value <> 3 Then
+		src = "C:\Program Files\Honeywell\client\abstract\ahu2-blower-alarm.mp3"
+	ElseIf ahu1Alarm.value <> 3 Then
+		src = "C:\Program Files\Honeywell\client\abstract\ahu1-blower-alarm.mp3"
+	End If
+	If src = "" Or alarmSilence.value = True Then
+		If IsObject(alarmPlayer) Then alarmPlayer.Controls.stop
 		Exit Function
-	ElseIf ahu2Alarm.value <> 3 And alarmSilence.value <> True Then
-		Set player = CreateObject("WMPlayer.OCX")
-		player.URL = "C:\Program Files\Honeywell\client\abstract\ahu2-blower-alarm.mp3"
-		player.Controls.play
-		'MsgBox "AHU-2 is in alarm, blower is offline."
-		Set player = Nothing
-		alarmSilence.value = True
-		Exit Function
-	ElseIf ahu1Alarm.value <> 3 And alarmSilence.value <> True Then
-		Set player = CreateObject("WMPlayer.OCX")
-		player.URL = "C:\Program Files\Honeywell\client\abstract\ahu1-blower-alarm.mp3"
-		player.Controls.play
-		'MsgBox "AHU-1 is in alarm, blower is offline."
-		Set player = Nothing
-		alarmSilence.value = True
-		Exit Function
+	End If
+	If Not IsObject(alarmPlayer) Then Set alarmPlayer = CreateObject("WMPlayer.OCX")
+	If alarmPlayer.playState <> 3 And alarmPlayer.playState <> 9 Then
+		alarmPlayer.URL = src
+		alarmPlayer.Controls.play
 	End If
 End Function
 
