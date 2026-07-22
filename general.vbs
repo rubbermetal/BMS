@@ -2,7 +2,7 @@ Class ControlField
 	Public value
 End Class
 
-Dim control, status, steamPressure, skipDampers
+Dim control, status, steamPressure, skipDampers, lastEnthSpFamily
 steamPressure = alphanum11.value - 1
 
 Function timeFetch ( )
@@ -627,6 +627,50 @@ Function FreeCoolPct(maE, oaE)
 	If p > 100 Then p = 100
 	FreeCoolPct = p
 End Function
+
+' --- Plant mode & maEnthSp defaults -----------------------------------------
+' plantMode: what the plant should be doing at this OAT, using the same band
+' edges as the dispatch tables. 45-72 with the chiller off is free cooling
+' (dispatchCooling returns False there); anything warmer, or 45-72 with the
+' chiller running, is mechanical cooling; below 45 is heating.
+Const ENTH_SP_COOL     = 26.2   ' cooling + free-cooling default target
+Const ENTH_SP_COOL_MIN = 22     ' mech-cooling floor: keep the chiller loaded
+Const ENTH_SP_HEAT     = 14     ' ~45F dry bulb at winter return RH
+
+Function plantMode(oat)
+	plantMode = ""
+	If Not IsNumeric(oat) Then Exit Function
+	If CDbl(oat) < 45 Then
+		plantMode = "HEAT"
+	ElseIf CDbl(oat) <= 72 And chillerStatus.value <> "ON" Then
+		plantMode = "FREE"
+	Else
+		plantMode = "COOL"
+	End If
+End Function
+
+' Seed maEnthSp with the mode default when the mode family changes (COOL and
+' FREE share one family - free air drives the same target as cooling, and
+' chiller cycling must not stomp an operator tweak). Inside mech cooling the
+' floor keeps the target high enough that the chiller stays loaded at low
+' load instead of being starved by cheap outside air.
+Sub maintainEnthSp(oat)
+	Dim m, fam
+	m = plantMode(oat)
+	If m = "" Then Exit Sub
+	If m = "HEAT" Then fam = "HEAT" Else fam = "COOL"
+	If fam <> lastEnthSpFamily Then
+		If fam = "HEAT" Then
+			maEnthSp.value = ENTH_SP_HEAT
+		Else
+			maEnthSp.value = ENTH_SP_COOL
+		End If
+		lastEnthSpFamily = fam
+	End If
+	If m = "COOL" And IsNumeric(maEnthSp.value) Then
+		If CDbl(maEnthSp.value) < ENTH_SP_COOL_MIN Then maEnthSp.value = ENTH_SP_COOL_MIN
+	End If
+End Sub
 
 ' --- Enthalpy-driven damper trim (mechanical cooling only) ------------------
 ' Feedback loop on each AHU's own mixed-air enthalpy vs the maEnthSp target.

@@ -39,6 +39,7 @@ Dim TempEnth, avgRH
 
 If IsSelected = True Then
 
+		Call maintainEnthSp(outsideTemp.value)
 		If outsideTemp.value >= 45 Then
 			If Not dispatchCooling(outsideTemp.value) Then
 				dispatchFreeCooling outsideTemp.value
