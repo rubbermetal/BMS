@@ -24,7 +24,7 @@ Else
 	shift = 1
 End If
 currentShift.value = shift
-'Call AlarmStatus()
+Call AlarmStatus()
 Call chillerMode()
 
 avgRaTemp = (((CDbl(Abs(ahu2RAtemp.value)) + CDbl(Abs(ahu1RAtemp.value))) / 2))
