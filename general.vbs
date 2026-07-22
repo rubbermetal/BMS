@@ -441,65 +441,41 @@ Function dispatchCooling(oat)
 		End If
 	Next
 End Function
-Function condE ( )
-				dataWindow.value = "Free Cooling Mode"
-				raDamper1 = 95
-				raDamper2 = 95
-				oaDamper1 = 100
-				oaDamper2 = 100
-				blowerControl1 = 82
-				blowerControl2 = 82
-				hv4Damper = 100
-				rhSp1 = 35
-				rhSp2 = 35
-				clgSp1 = 55
-				clgSp2 = 55
-				htgSp1 = 55
-				htgSp2 = 55
-				nosp = True
-				ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
-End Function
-Function condG ( )
-				dataWindow.value = "Free Cooling Mode"
-				raDamper1 = 85
-				raDamper2 = 85
-				oaDamper1 = 100
-				oaDamper2 = 100
-				blowerControl1 = 85
-				blowerControl2 = 85
-				hv4Damper = 50
-				rhSp1 = 35
-				rhSp2 = 35
-				clgSp1 = 53
-				clgSp2 = 53
-				htgSp1 = 53
-				htgSp2 = 53
-				nosp = True
-				ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
-End Function
-Function condI ( )
-				dataWindow.value = "Free Cooling Mode"
-				raDamper1 = 65
-				raDamper2 = 65
-				oaDamper1 = 100
-				oaDamper2 = 100
-				If spMaintain.value = True Then
-					Call StaticPressureEast(currentMinutes)
-					Call StaticPressureWest(currentMinutes)
-					nosp = False
-				Else
-					nosp = True
-				End If
-				blowerControl1 = 88
-				blowerControl2 = 88
-				hv4Damper = 50
-				rhSp1 =  35
-				rhSp2 = 35
-				clgSp1 = 55
-				clgSp2 = 55
-				htgSp1 = 53
-				htgSp2 = 53
-				ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+' Apply one free-cooling schedule row (replaces condE/condG/condI).
+Sub applyFreeCoolRow(r)
+	Dim nosp
+	If r(8) Then
+		nosp = spMaintainNosp()
+	Else
+		nosp = True
+	End If
+	dataWindow.value = "Free Cooling Mode"
+	skipDampers = False
+	ScenarioA r(1), r(1), r(2), r(2), r(3), r(3), r(4), r(5), r(5), r(6), r(6), r(7), r(7), nosp
+End Sub
+' Free-cooling schedule dispatch (replaces condE/condG/condI). Only reached
+' when dispatchCooling returned False (chiller OFF, sub-72 band) and OAT is
+' >= 45; the last row is the unconditional catch-all, same band edges as the
+' old condE (>55) / condG (>50) / else condI ladder.
+' Row cols: lowBound, RAdamper, OAdamper, fan, hv4, rhSp, clgSp, htgSp,
+' spAllowed (True = spMaintain checkbox may hand the blowers to the
+' static-pressure loops).
+Function dispatchFreeCooling(oat)
+	Dim fcSched(2), i, r
+	dispatchFreeCooling = False
+	If Not IsNumeric(oat) Then Exit Function
+	oat = CDbl(oat)
+	fcSched(0) = Array(55, 95, 100, 82, 100, 35, 55, 55, False)
+	fcSched(1) = Array(50, 85, 100, 85,  50, 35, 53, 53, False)
+	fcSched(2) = Array(50, 65, 100, 88,  50, 35, 55, 53, True)
+	For i = 0 To UBound(fcSched)
+		r = fcSched(i)
+		If oat > r(0) Or i = UBound(fcSched) Then
+			applyFreeCoolRow r
+			dispatchFreeCooling = True
+			Exit Function
+		End If
+	Next
 End Function
 ' spMaintain checkbox -> hand the blowers to the static-pressure loops for
 ' this pass. Returns the nosp flag for ScenarioA (False = static-pressure

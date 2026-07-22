@@ -41,13 +41,7 @@ If IsSelected = True Then
 
 		If outsideTemp.value >= 45 Then
 			If Not dispatchCooling(outsideTemp.value) Then
-				If outsideTemp.value > 55 Then
-					Call condE()
-				ElseIf outsideTemp.value > 50 Then
-					Call condG()
-				Else
-					Call condI()
-				End If
+				dispatchFreeCooling outsideTemp.value
 			End If
 		ElseIf outsideTemp.value =< 45 Then
 			dispatchHeating outsideTemp.value
