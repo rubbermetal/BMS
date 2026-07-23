@@ -682,7 +682,16 @@ Sub tempDamperTrim(dschPt, maPt, raTempPt, tgt, raMode, raPt, oaMode, oaPt, raLo
 		changeControl oaMode, oaPt, FC_RCV_OA, "manual"
 		Exit Sub
 	End If
-	tMA = CDbl(Abs(maPt.value))
+	' Measurement: the true MA sensor, EXCEPT when the chiller is on - then
+	' HtgDsch stands in for the mix (heating coil idle, so it is a passive,
+	' well-mixed reading downstream). Either way the active coil's controlled
+	' variable is never this loop's measurement: heating valve owns HtgDsch
+	' only when the chiller is off, and then we are on the MA sensor.
+	If chillerStatus.value = "ON" Then
+		tMA = CDbl(Abs(dschPt.value))
+	Else
+		tMA = CDbl(Abs(maPt.value))
+	End If
 	stp = tempTrimStep(tMA, tgt, CDbl(outsideTemp.value), CDbl(Abs(raTempPt.value)))
 	If tMA <= FC_MA_COLD And stp > 0 Then stp = 0
 	raPos = fcTrimPos(CDbl(raPt.value), stp, raLo, raHi)
