@@ -1,4 +1,5 @@
-Sub  outsideTemp_OnLoad(  )
+Sub outsideTemp_OnLoad(  )
+
  Dim IsSelected
 Dim currentTime, currentHour, amOrPm, shift
 Dim dp, dp1, dp2
@@ -13,9 +14,9 @@ currentHour = Hour(currentTime)
 currentMinutes = Minute(currentTime)
 currentSeconds = Second(currentTime)
 amOrPm =currentTime
-
-enthMaintain.value = true
-maEnthSp.value = 26.2
+' + 8 - 2.5
+ahu1MAa.value = numPad(ahu1MA.value - 1.8)
+ahu2MAa.value = numPad(ahu2MA.value - 5.5)
 
 IsSelected = copilot.value
 If (currentHour >= 7) And (currentHour <15) Then
@@ -38,15 +39,42 @@ Dim TempEnth, avgRH
 	TempEnth = (CDbl(HtgDsch1.value) + CDbl(HtgDsch2.value)) / 2
 	avgRH = CDbl(ahu2RH.value)   ' ahu2RH only - ahu1RH reads high (boiler-room humidity)
 	maEnth.value = Round(enthalpyIP(TempEnth, avgRH), 2)
-
+	loadcalc.value = Round(calculateLoad() / 12000, 1)
 If IsSelected = True Then
 
 		If outsideTemp.value >= 45 Then
 			If Not dispatchCooling(outsideTemp.value) Then
-				dispatchFreeCooling outsideTemp.value
+				If outsideTemp.value > 55 Then
+					Call condE()
+				ElseIf outsideTemp.value > 50 Then
+					Call condG()
+				Else
+					Call condI()
+				End If
 			End If
-		ElseIf outsideTemp.value =< 45 Then
-			dispatchHeating outsideTemp.value
+		ElseIf outsideTemp.value =< 45 And outsideTemp.value > 0 Then
+			If outsideTemp.value =< 45 And outsideTemp.value > 40 Then
+				Call condK()
+			ElseIf outsideTemp.value  =< 40 And outsideTemp.value > 35 Then
+				Call condL()
+			ElseIf outsideTemp.value  =< 35 And outsideTemp.value > 30 Then
+				Call condM()
+			ElseIf outsideTemp.value  =< 30 And outsideTemp.value > 25 Then
+				Call condN()
+			ElseIf outsideTemp.value =< 25 And outsideTemp.value > 20 Then
+				Call condO()
+			ElseIf outsideTemp.value =< 20 And outsideTemp.value > 15 Then
+				Call condP()
+			ElseIf outsideTemp.value =< 15 And outsideTemp.value > 10 Then
+				Call condQ()
+			ElseIf outsideTemp.value =< 10 And outsideTemp.value >= 0 Then
+				Call condR()
+			Else
+				Call condS()
+			End If
+			dataWindow.value = "Normal Heating Mode"
+		ElseIf outsideTemp.value =< 0 Then
+			Call condT()
 		Else
 			If hv4MAdamper.value <> 60 Then
 				hv4MAdamper.value = 60
