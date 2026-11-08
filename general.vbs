@@ -17,6 +17,9 @@ Const MIX_STEP = 2
 Const MIX_STEP_FAST = 5
 Const MIX_FREE_OA_MAX = 100   ' free cooling only
 Const MIX_FREE_RA_MIN = 35
+' Heat-side humidity (tune here)
+Const RH_DEW_POINT = 38      ' dew point target, deg F
+Const RH_MIN_CHANGE = 1      ' ignore setpoint changes smaller than this, % RH
 Dim lastMixMove1, lastMixMove2
 steamPressure = alphanum11.value - 1
 
@@ -89,39 +92,25 @@ Function StaticPressureWest(timeCheck )
 	changeControl ahu2BlowerMode, ahu2BlowerControl, speed2, "manual"
 End Function
 
-Function HumidityAdjust ( t  )
-	If t >= 45 And t < 50 Then
-		x = 40
-	ElseIf t >= 40 And t < 45 Then
-		x = 37.5
-	ElseIf t >= 35 And t < 40 Then
-		x = 35
-	ElseIf t >= 30 And t < 40 Then
-		x = 32.5
-	ElseIf t >= 25 And t < 30 Then
-		x = 30
-	ElseIf t >= 20 And t < 25 Then
-		x = 27.5
-	ElseIf t >= 15 And t < 20 Then
-		x = 25
-	ElseIf t >= 10 And t < 15 Then
-		x = 22.5
-	ElseIf t >= 5 And t < 10 Then
-		x = 17.5
-	ElseIf t >= 0 And t < 5 Then
-		x = 15
-	ElseIf t >= -10 And t < 0 Then
-		x = 15
-	ElseIf t >= -20 And t < -10 Then
-		x = 10
-	ElseIf t >= -30 And t < -20 Then
-		x = 5
-	ElseIf t >= -40 And t < -30 Then
-		x = 5
-	Else 
-		x = 45
+' RH that puts air at return temperature tempF on dew point dpF.
+Function rhForDewPoint(dpF, tempF)
+	Dim wDp, wT
+	wDp = satW(dpF)
+	wT = satW(tempF)
+	rhForDewPoint = 100 * (wDp / (0.621945 + wDp)) / (wT / (0.621945 + wT))
+End Function
+' Heat-side RH setpoint for one air handler, from its own return air temperature.
+' A failed return sensor falls back to 70 F so it cannot command a wild setpoint.
+Function humiditySp(raField, spField)
+	Dim ra, n
+	ra = 0
+	If IsNumeric(raField.value) Then ra = CDbl(Abs(raField.value))
+	If ra < 55 Or ra > 90 Then ra = 70
+	n = Round(rhForDewPoint(RH_DEW_POINT, ra), 1)
+	If IsNumeric(spField.value) Then
+		If Abs(n - CDbl(spField.value)) < RH_MIN_CHANGE Then n = CDbl(spField.value)
 	End If
-	HumidityAdjust = x
+	humiditySp = n
 End Function
 
 Function AlarmStatus(  )
@@ -625,8 +614,8 @@ Function condK ( )
 				blowerControl1 = 82
 				blowerControl2 = 82
 				hv4Damper = 50
-				rhSp1 =  HumidityAdjust( outsideTemp.value )
-				rhSp2 = HumidityAdjust( outsideTemp.value )
+				rhSp1 = humiditySp(ahu1RAtemp, ahu1RhSp)
+				rhSp2 = humiditySp(ahu2RAtemp, ahu2RhSp)
 				clgSp1 = 55
 				clgSp2 = 55
 				htgSp1 = 55
@@ -648,8 +637,8 @@ Function condL ( )
 				blowerControl1 = 82
 				blowerControl2 = 82
 				hv4Damper = 60
-				rhSp1 =  HumidityAdjust( outsideTemp.value )
-				rhSp2 = HumidityAdjust( outsideTemp.value )
+				rhSp1 = humiditySp(ahu1RAtemp, ahu1RhSp)
+				rhSp2 = humiditySp(ahu2RAtemp, ahu2RhSp)
 				clgSp1 = 55
 				clgSp2 = 55
 				htgSp1 = 55
@@ -671,8 +660,8 @@ Function condM ( )
 				blowerControl1 = 82
 				blowerControl2 = 82
 				hv4Damper = 60
-				rhSp1 =  HumidityAdjust( outsideTemp.value )
-				rhSp2 = HumidityAdjust( outsideTemp.value )
+				rhSp1 = humiditySp(ahu1RAtemp, ahu1RhSp)
+				rhSp2 = humiditySp(ahu2RAtemp, ahu2RhSp)
 				clgSp1 = 55
 				clgSp2 = 55
 				htgSp1 = 58
@@ -694,8 +683,8 @@ Function condN ( )
 				blowerControl1 = 88
 				blowerControl2 = 88
 				hv4Damper = 60
-				rhSp1 =  HumidityAdjust( outsideTemp.value )
-				rhSp2 = HumidityAdjust( outsideTemp.value )
+				rhSp1 = humiditySp(ahu1RAtemp, ahu1RhSp)
+				rhSp2 = humiditySp(ahu2RAtemp, ahu2RhSp)
 				clgSp1 = 55
 				clgSp2 = 55
 				htgSp1 = 60
@@ -717,8 +706,8 @@ Function condO ( )
 				blowerControl1 = 88
 				blowerControl2 = 88
 				hv4Damper = 60
-				rhSp1 =  HumidityAdjust( outsideTemp.value )
-				rhSp2 = HumidityAdjust( outsideTemp.value )
+				rhSp1 = humiditySp(ahu1RAtemp, ahu1RhSp)
+				rhSp2 = humiditySp(ahu2RAtemp, ahu2RhSp)
 				clgSp1 = 55
 				clgSp2 = 55
 				htgSp1 = 60
@@ -740,8 +729,8 @@ Function condP ( )
 				blowerControl1 = 86
 				blowerControl2 = 86
 				hv4Damper = 60
-				rhSp1 =  HumidityAdjust( outsideTemp.value )
-				rhSp2 = HumidityAdjust( outsideTemp.value )
+				rhSp1 = humiditySp(ahu1RAtemp, ahu1RhSp)
+				rhSp2 = humiditySp(ahu2RAtemp, ahu2RhSp)
 				clgSp1 = 55
 				clgSp2 = 55
 				htgSp1 = 60
@@ -763,8 +752,8 @@ Function condQ ( )
 				blowerControl1 = 84
 				blowerControl2 = 84
 				hv4Damper = 60
-				rhSp1 =  HumidityAdjust( outsideTemp.value )
-				rhSp2 = HumidityAdjust( outsideTemp.value )
+				rhSp1 = humiditySp(ahu1RAtemp, ahu1RhSp)
+				rhSp2 = humiditySp(ahu2RAtemp, ahu2RhSp)
 				clgSp1 = 55
 				clgSp2 = 55
 				htgSp1 = 60
@@ -786,8 +775,8 @@ Function condR ( )
 				blowerControl1 = 84
 				blowerControl2 = 84
 				hv4Damper = 60
-				rhSp1 =  HumidityAdjust( outsideTemp.value )
-				rhSp2 = HumidityAdjust( outsideTemp.value )
+				rhSp1 = humiditySp(ahu1RAtemp, ahu1RhSp)
+				rhSp2 = humiditySp(ahu2RAtemp, ahu2RhSp)
 				clgSp1 = 55
 				clgSp2 = 55
 				htgSp1 = 60
@@ -809,8 +798,8 @@ Function condS ( )
 				blowerControl1 = 84
 				blowerControl2 = 84
 				hv4Damper = 60
-				rhSp1 = HumidityAdjust( outsideTemp.value )
-				rhSp2 = HumidityAdjust( outsideTemp.value )
+				rhSp1 = humiditySp(ahu1RAtemp, ahu1RhSp)
+				rhSp2 = humiditySp(ahu2RAtemp, ahu2RhSp)
 				clgSp1 = 55
 				clgSp2 = 55
 				htgSp1 = 60
@@ -832,8 +821,8 @@ Function condT ( )
 			blowerControl1 = 84
 			blowerControl2 = 84
 			hv4Damper = 60
-			rhSp1 = HumidityAdjust( outsideTemp.value )
-			rhSp2 = HumidityAdjust( outsideTemp.value )
+			rhSp1 = humiditySp(ahu1RAtemp, ahu1RhSp)
+			rhSp2 = humiditySp(ahu2RAtemp, ahu2RhSp)
 			clgSp1 = 55
 			clgSp2 = 55
 			htgSp1 = 60
