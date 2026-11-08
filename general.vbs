@@ -7,8 +7,8 @@ Dim control, status, steamPressure
 Const MIX_TARGET = 45
 Const MIX_DEADBAND = 1
 Const MIX_OA_MIN = 35       ' static pressure floor
-Const MIX_OA_MAX = 70       ' static pressure ceiling, heating only
-Const MIX_RA_MAX = 50       ' RA is % closed: 0 = fully open
+Const MIX_OA_MAX = 90       ' static pressure ceiling, heating only
+Const MIX_RA_MAX = 90       ' RA is % closed: 0 = fully open
 Const MIX_WAIT_SEC = 60     ' time for mixed air to respond
 Const MIX_COLD_OAT = 32
 Const MIX_LOW_MA = 40
