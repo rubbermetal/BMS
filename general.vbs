@@ -15,6 +15,8 @@ Const MIX_LOW_MA = 40
 Const MIX_STEP_SLOW = 1
 Const MIX_STEP = 2
 Const MIX_STEP_FAST = 5
+Const MIX_FREE_OA_MAX = 100   ' free cooling only
+Const MIX_FREE_RA_MIN = 35
 Dim lastMixMove1, lastMixMove2
 steamPressure = alphanum11.value - 1
 
@@ -514,6 +516,58 @@ Sub ScenarioHeat(raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerCo
 	changeControl ahu1HtgSpMode, ahu1HtgSp, htgSp1, "manual"
 	changeControl ahu2HtgSpMode, ahu2HtgSp, htgSp2, "manual"
 End Sub
+' Free cooling: next damper position. Steps toward the limits while mixed air is
+' above target, back off if it is below target, never a jump.
+Function mixFreeNext(pos, ma, lo, hi)
+	Dim n
+	n = pos
+	If pos > hi Then
+		n = pos - MIX_STEP
+		If n < hi Then n = hi
+	ElseIf pos < lo Then
+		n = pos + MIX_STEP
+		If n > lo Then n = lo
+	ElseIf ma > MIX_TARGET + MIX_DEADBAND Then
+		n = pos + MIX_STEP
+		If n > hi Then n = hi
+	ElseIf ma < MIX_TARGET - MIX_DEADBAND Then
+		n = pos - MIX_STEP
+		If n < lo Then n = lo
+	End If
+	mixFreeNext = n
+End Function
+' Free cooling: chase the mixed air target. Outside opens and return closes (% closed)
+' together; raMax is the most the return may close at this outside temperature.
+Sub mixFreeControl(maField, oaMode, oaCtl, raMode, raCtl, raMax, lastMove)
+	Dim oa, ra, ma, nextOa, nextRa
+	If Not (IsNumeric(maField.value) And IsNumeric(oaCtl.value) And IsNumeric(raCtl.value)) Then Exit Sub
+	If Not mixWaitDone(lastMove) Then Exit Sub
+	oa = CDbl(oaCtl.value)
+	ra = CDbl(raCtl.value)
+	ma = CDbl(maField.value)
+	nextOa = mixFreeNext(oa, ma, MIX_OA_MIN, MIX_FREE_OA_MAX)
+	nextRa = mixFreeNext(ra, ma, MIX_FREE_RA_MIN, raMax)
+	changeControl oaMode, oaCtl, nextOa, "manual"
+	changeControl raMode, raCtl, nextRa, "manual"
+	If nextOa <> oa Or nextRa <> ra Then lastMove = Timer
+End Sub
+' Free cooling: same as ScenarioA, but mixed air control owns the dampers.
+' raDamper1/raDamper2 are the return damper closing limits from condE/condG.
+Sub ScenarioFree(raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp)
+	mixFreeControl ahu1MAa, ahu1OAdamperMode, ahu1OAdamper, ahu1RAdamperMode, ahu1RAdamper, raDamper1, lastMixMove1
+	mixFreeControl ahu2MAa, ahu2OAdamperMode, ahu2OAdamper, ahu2RAdamperMode, ahu2RAdamper, raDamper2, lastMixMove2
+	If nosp = True Then
+		changeControl ahu1BlowerMode, ahu1BlowerControl, blowerControl1, "manual"
+		changeControl ahu2BlowerMode, ahu2BlowerControl, blowerControl2, "manual"
+	End If
+	changeControl hv4DamperMode, hv4MAdamper, hv4Damper, "manual"
+	changeControl ahu1RhSpMode, ahu1RhSp, rhSp1, "manual"
+	changeControl ahu2RhSpMode, ahu2RhSp, rhSp2, "manual"
+	changeControl ahu1ClgSpMode, ahu1ClgSp, clgSp1, "manual"
+	changeControl ahu2ClgSpMode, ahu2ClgSp, clgSp2, "manual"
+	changeControl ahu1HtgSpMode, ahu1HtgSp, htgSp1, "manual"
+	changeControl ahu2HtgSpMode, ahu2HtgSp, htgSp2, "manual"
+End Sub
 Function condE ( )
 				dataWindow.value = "Free Cooling Mode"
 				raDamper1 = 95
@@ -530,7 +584,7 @@ Function condE ( )
 				htgSp1 = 55
 				htgSp2 = 55
 				nosp = True
-				ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+				ScenarioFree raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
 End Function
 Function condG ( )
 				dataWindow.value = "Free Cooling Mode"
@@ -538,8 +592,8 @@ Function condG ( )
 				raDamper2 = 85
 				oaDamper1 = 100
 				oaDamper2 = 100
-				blowerControl1 = 85
-				blowerControl2 = 85
+				blowerControl1 = 82
+				blowerControl2 = 82
 				hv4Damper = 50
 				rhSp1 = 35
 				rhSp2 = 35
@@ -548,31 +602,13 @@ Function condG ( )
 				htgSp1 = 53
 				htgSp2 = 53
 				nosp = True
-				ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+				ScenarioFree raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
 End Function
+' 45 to 50 F outside with the chiller off: free cooling now starts above 50 F,
+' so this band runs the heat side (condK + mixed air damper control).
 Function condI ( )
-				dataWindow.value = "Free Cooling Mode"
-				raDamper1 = 65
-				raDamper2 = 65
-				oaDamper1 = 100
-				oaDamper2 = 100
-				If spMaintain.value = True Then
-					Call StaticPressureEast(currentMinutes)
-					Call StaticPressureWest(currentMinutes)
-					nosp = False
-				Else
-					nosp = True
-				End If
-				blowerControl1 = 88
-				blowerControl2 = 88
-				hv4Damper = 50
-				rhSp1 =  35
-				rhSp2 = 35
-				clgSp1 = 55
-				clgSp2 = 55
-				htgSp1 = 53
-				htgSp2 = 53
-				ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+	dataWindow.value = "Normal Heating Mode"
+	Call condK()
 End Function
 Function condK ( )
 				raDamper1 = 50
