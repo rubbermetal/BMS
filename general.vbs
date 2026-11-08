@@ -3,6 +3,19 @@ Class ControlField
 End Class
 
 Dim control, status, steamPressure
+' Heat-side mixed air damper control (tune here)
+Const MIX_TARGET = 45
+Const MIX_DEADBAND = 1
+Const MIX_OA_MIN = 35       ' static pressure floor
+Const MIX_OA_MAX = 70       ' static pressure ceiling, heating only
+Const MIX_RA_MAX = 50       ' RA is % closed: 0 = fully open
+Const MIX_WAIT_SEC = 60     ' time for mixed air to respond
+Const MIX_COLD_OAT = 32
+Const MIX_LOW_MA = 40
+Const MIX_STEP_SLOW = 1
+Const MIX_STEP = 2
+Const MIX_STEP_FAST = 5
+Dim lastMixMove1, lastMixMove2
 steamPressure = alphanum11.value - 1
 
 Function timeFetch ( )
@@ -429,6 +442,78 @@ Function dispatchCooling(oat)
 		End If
 	Next
 End Function
+Function mixWaitDone(lastMove)
+	Dim elapsed
+	If IsEmpty(lastMove) Then
+		mixWaitDone = True
+		Exit Function
+	End If
+	elapsed = Timer - lastMove
+	If elapsed < 0 Then elapsed = elapsed + 86400   ' midnight rollover
+	mixWaitDone = (elapsed >= MIX_WAIT_SEC)
+End Function
+' Next outside damper position: one step only, never a jump.
+Function mixNextOa(oa, ma, oat)
+	Dim closeStep, openStep, n
+	If ma < MIX_LOW_MA Then closeStep = MIX_STEP_FAST Else closeStep = MIX_STEP
+	If oat <= MIX_COLD_OAT Then openStep = MIX_STEP_SLOW Else openStep = MIX_STEP
+
+	If oa > MIX_OA_MAX Then                 ' arrived above the ceiling: walk down
+		n = oa - closeStep
+		If n < MIX_OA_MAX Then n = MIX_OA_MAX
+	ElseIf oa < MIX_OA_MIN Then             ' arrived below the floor: walk up
+		n = oa + openStep
+		If n > MIX_OA_MIN Then n = MIX_OA_MIN
+	Else
+		n = oa
+		If ma > MIX_TARGET + MIX_DEADBAND Then
+			n = oa + openStep
+		ElseIf ma < MIX_TARGET - MIX_DEADBAND Then
+			n = oa - closeStep
+		End If
+		If n > MIX_OA_MAX Then n = MIX_OA_MAX
+		If n < MIX_OA_MIN Then n = MIX_OA_MIN
+	End If
+	mixNextOa = n
+End Function
+' Return damper follows outside air (capped), limited to one step per pass.
+Function mixNextRa(nextOa, ra)
+	Dim target, n
+	target = nextOa
+	If target > MIX_RA_MAX Then target = MIX_RA_MAX
+	n = target
+	If n > ra + MIX_STEP_FAST Then n = ra + MIX_STEP_FAST
+	If n < ra - MIX_STEP_FAST Then n = ra - MIX_STEP_FAST
+	mixNextRa = n
+End Function
+Sub mixAirControl(maField, oaMode, oaCtl, raMode, raCtl, lastMove)
+	Dim oa, ra, nextOa, nextRa
+	If Not (IsNumeric(maField.value) And IsNumeric(oaCtl.value) And IsNumeric(raCtl.value) And IsNumeric(outsideTemp.value)) Then Exit Sub
+	If Not mixWaitDone(lastMove) Then Exit Sub
+	oa = CDbl(oaCtl.value)
+	ra = CDbl(raCtl.value)
+	nextOa = mixNextOa(oa, CDbl(maField.value), CDbl(outsideTemp.value))
+	nextRa = mixNextRa(nextOa, ra)
+	changeControl oaMode, oaCtl, nextOa, "manual"
+	changeControl raMode, raCtl, nextRa, "manual"
+	If nextOa <> oa Or nextRa <> ra Then lastMove = Timer
+End Sub
+' Heat side: same as ScenarioA, but mixed air control owns the dampers.
+Sub ScenarioHeat(raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp)
+	mixAirControl ahu1MAa, ahu1OAdamperMode, ahu1OAdamper, ahu1RAdamperMode, ahu1RAdamper, lastMixMove1
+	mixAirControl ahu2MAa, ahu2OAdamperMode, ahu2OAdamper, ahu2RAdamperMode, ahu2RAdamper, lastMixMove2
+	If nosp = True Then
+		changeControl ahu1BlowerMode, ahu1BlowerControl, blowerControl1, "manual"
+		changeControl ahu2BlowerMode, ahu2BlowerControl, blowerControl2, "manual"
+	End If
+	changeControl hv4DamperMode, hv4MAdamper, hv4Damper, "manual"
+	changeControl ahu1RhSpMode, ahu1RhSp, rhSp1, "manual"
+	changeControl ahu2RhSpMode, ahu2RhSp, rhSp2, "manual"
+	changeControl ahu1ClgSpMode, ahu1ClgSp, clgSp1, "manual"
+	changeControl ahu2ClgSpMode, ahu2ClgSp, clgSp2, "manual"
+	changeControl ahu1HtgSpMode, ahu1HtgSp, htgSp1, "manual"
+	changeControl ahu2HtgSpMode, ahu2HtgSp, htgSp2, "manual"
+End Sub
 Function condE ( )
 				dataWindow.value = "Free Cooling Mode"
 				raDamper1 = 95
@@ -510,7 +595,7 @@ Function condK ( )
 				clgSp2 = 55
 				htgSp1 = 55
 				htgSp2 = 55
-				ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+				ScenarioHeat raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
 End Function
 Function condL ( )
 				raDamper1 = 50
@@ -533,7 +618,7 @@ Function condL ( )
 				clgSp2 = 55
 				htgSp1 = 55
 				htgSp2 = 55
-				ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+				ScenarioHeat raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
 End Function
 Function condM ( )
 				raDamper1 = 50
@@ -556,7 +641,7 @@ Function condM ( )
 				clgSp2 = 55
 				htgSp1 = 58
 				htgSp2 = 58
-				ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+				ScenarioHeat raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
 End Function
 Function condN ( )
 				raDamper1 = 50
@@ -579,7 +664,7 @@ Function condN ( )
 				clgSp2 = 55
 				htgSp1 = 60
 				htgSp2 = 60
-				ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+				ScenarioHeat raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
 End Function
 Function condO ( )
 				raDamper1 = 50
@@ -602,7 +687,7 @@ Function condO ( )
 				clgSp2 = 55
 				htgSp1 = 60
 				htgSp2 = 60
-				ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+				ScenarioHeat raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
 End Function
 Function condP ( )
 				raDamper1 = 50
@@ -625,7 +710,7 @@ Function condP ( )
 				clgSp2 = 55
 				htgSp1 = 60
 				htgSp2 = 60
-				ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+				ScenarioHeat raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
 End Function
 Function condQ ( )
 				raDamper1 = 45
@@ -648,7 +733,7 @@ Function condQ ( )
 				clgSp2 = 55
 				htgSp1 = 60
 				htgSp2 = 60
-				ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+				ScenarioHeat raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
 End Function
 Function condR ( )
 				raDamper1 = 45
@@ -671,7 +756,7 @@ Function condR ( )
 				clgSp2 = 55
 				htgSp1 = 60
 				htgSp2 = 60
-				ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+				ScenarioHeat raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
 End Function
 Function condS ( )
 				raDamper1 = 45
@@ -694,7 +779,7 @@ Function condS ( )
 				clgSp2 = 55
 				htgSp1 = 60
 				htgSp2 = 60
-				ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+				ScenarioHeat raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
 End Function
 Function condT ( )
 			raDamper1 = 45
@@ -718,5 +803,5 @@ Function condT ( )
 			htgSp1 = 60
 			htgSp2 = 60
 			nosp = True
-			ScenarioA raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+			ScenarioHeat raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
 End Function
