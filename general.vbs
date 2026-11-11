@@ -3,23 +3,24 @@ Class ControlField
 End Class
 
 Dim control, status, steamPressure
-' Heat-side mixed air damper control (tune here)
-Const MIX_TARGET = 45
-Const MIX_DEADBAND = 1
-Const MIX_OA_MIN = 35       ' static pressure floor
-Const MIX_OA_MAX = 90       ' static pressure ceiling, heating only
-Const MIX_RA_MAX = 90       ' RA is % closed: 0 = fully open
-Const MIX_WAIT_SEC = 60     ' time for mixed air to respond
-Const MIX_COLD_OAT = 32
-Const MIX_LOW_MA = 40
-Const MIX_STEP_SLOW = 1
-Const MIX_STEP = 2
-Const MIX_STEP_FAST = 5
-Const MIX_FREE_OA_MAX = 100   ' free cooling only
-Const MIX_FREE_RA_MIN = 35
+' Mixed air damper control, heat side and free cooling (tune here)
+' OA = outside damper, % open (0 = closed). RA = return damper, % closed (0 = fully open).
+Const MIX_TARGET = 45        ' mixed air temp the dampers aim for, deg F (both modes)
+Const MIX_DEADBAND = 1       ' no damper move while mixed air is within this of the target, deg F (both)
+Const MIX_OA_MIN = 35        ' OA floor, % open (both). Building goes negative below this: never lower it
+Const MIX_OA_MAX = 90        ' OA ceiling, % open (heat side; static pressure)
+Const MIX_RA_MAX = 90        ' most the RA may close, % closed (heat side)
+Const MIX_WAIT_SEC = 60      ' seconds after a damper move before the next one (both)
+Const MIX_COLD_OAT = 32      ' at or below this outside temp, OA opens by MIX_STEP_SLOW, deg F (heat side)
+Const MIX_LOW_MA = 40        ' below this mixed air temp, OA closes by MIX_STEP_FAST, deg F (heat side)
+Const MIX_STEP_SLOW = 1      ' % per move: OA opening in cold weather (heat side)
+Const MIX_STEP = 2           ' % per move: normal OA opening and closing; every move in free cooling
+Const MIX_STEP_FAST = 5      ' % per move: OA closing on low mixed air; most the RA moves per pass (heat side)
+Const MIX_FREE_OA_MAX = 100  ' OA ceiling, % open (free cooling)
+Const MIX_FREE_RA_MIN = 35   ' least the RA closes, % closed (free cooling; each band sets the most)
 ' Heat-side humidity (tune here)
-Const RH_DEW_POINT = 38      ' dew point target, deg F
-Const RH_MIN_CHANGE = 1      ' ignore setpoint changes smaller than this, % RH
+Const RH_DEW_POINT = 38      ' dew point to hold, deg F; each AHU's RH setpoint is worked out from it and its return temp
+Const RH_MIN_CHANGE = 1      ' RH setpoint is rewritten only when it moves at least this much, % RH
 Dim lastMixMove1, lastMixMove2
 steamPressure = alphanum11.value - 1
 
