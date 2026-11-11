@@ -5,14 +5,11 @@ Dim currentTime, currentHour, amOrPm, shift
 Dim dp, dp1, dp2
 Dim avgRaTemp
 Dim avgRaRh, a, b, alpha
-Dim raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2, speed1, speed2
 
 
 FormatDateTime currentTime, vbLongTime
 currentTime = Time
 currentHour = Hour(currentTime)
-currentMinutes = Minute(currentTime)
-currentSeconds = Second(currentTime)
 amOrPm =currentTime
 ' + 8 - 2.5
 ahu1MAa.value = numPad(ahu1MA.value - 1.8)
@@ -69,8 +66,6 @@ If IsSelected = True Then
 				Call condQ()
 			ElseIf outsideTemp.value =< 10 And outsideTemp.value >= 0 Then
 				Call condR()
-			Else
-				Call condS()
 			End If
 			dataWindow.value = "Normal Heating Mode"
 		ElseIf outsideTemp.value =< 0 Then

@@ -56,42 +56,6 @@ Function chillerMode(  )
 		End If
 	End If
 End Function
-Function StaticPressureEast(timeCheck )
-	Dim spSp, minSpeed, maxSpeed
-	minSpeed = "83.0"
-	maxSpeed = "99.0"
-	If timeCheck = 30 Or timeCheck = 0 Then
-			If alphanum10.value > eastBuldingStatic.value And ahu1BlowerControl.value < maxSpeed Then
-				speed1 = ahu1BlowerControl.value + 1
-			ElseIf alphanum10.value < eastBuldingStatic.value And ahu1BlowerControl.value > minSpeed Then
-				speed1 = ahu1BlowerControl.value  - 1
-			Else
-				speed1 = ahu1BlowerControl.value
-			End If
-	Else
-		speed1 = ahu1BlowerControl.value
-	End If
-	changeControl ahu1BlowerMode, ahu1BlowerControl, speed1, "manual"
-End Function
-
-Function StaticPressureWest(timeCheck )
-	Dim spSp, minSpeed, maxSpeed
-	minSpeed = "83.0"
-	maxSpeed = "99.0"
-	If timeCheck = 30 Or timeCheck = 0 Then
-			If alphanum100.value > alphanum21.value And ahu2BlowerControl.value < maxSpeed Then
-				speed2 = ahu2BlowerControl.value + 1
-			ElseIf alphanum100.value < alphanum21.value And ahu2BlowerControl.value > minSpeed Then
-				speed2 = ahu2BlowerControl.value  - 1
-			Else
-				speed2 = ahu2BlowerControl.value
-			End If
-	Else
-		speed2 = ahu2BlowerControl.value
-	End If
-	changeControl ahu2BlowerMode, ahu2BlowerControl, speed2, "manual"
-End Function
-
 ' RH that puts air at return temperature tempF on dew point dpF.
 Function rhForDewPoint(dpF, tempF)
 	Dim wDp, wT
@@ -356,15 +320,13 @@ Sub changeControl(status, control, sp, mode)
 	End If
 End Sub
 ' Cooling scenario A
-Sub ScenarioA(raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp)
+Sub ScenarioA(raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2)
 	changeControl ahu1RAdamperMode, ahu1RAdamper, raDamper1, "manual"
 	changeControl ahu2RAdamperMode, ahu2RAdamper, raDamper2, "manual"
 	changeControl ahu1OAdamperMode, ahu1OAdamper, oaDamper1, "manual"
 	changeControl ahu2OAdamperMode, ahu2OAdamper, oaDamper2, "manual"
-	If nosp = True Then
-		changeControl ahu1BlowerMode, ahu1BlowerControl, blowerControl1, "manual"
-		changeControl ahu2BlowerMode, ahu2BlowerControl, blowerControl2, "manual"
-	End If
+	changeControl ahu1BlowerMode, ahu1BlowerControl, blowerControl1, "manual"
+	changeControl ahu2BlowerMode, ahu2BlowerControl, blowerControl2, "manual"
 	changeControl hv4DamperMode, hv4MAdamper, hv4Damper, "manual"
 	changeControl ahu1RhSpMode, ahu1RhSp, rhSp1, "manual"
 	changeControl ahu2RhSpMode, ahu2RhSp, rhSp2, "manual"
@@ -388,7 +350,7 @@ Sub applyCoolingRow(r)
 	End If
 	sp = dischargeSp(r(6), r(7))
 	dataWindow.value = coolingLabel()
-	ScenarioA r(1), r(1), r(2), r(2), r(3), r(3), hv4, r(5), r(5), sp, sp, sp, sp, True
+	ScenarioA r(1), r(1), r(2), r(2), r(3), r(3), hv4, r(5), r(5), sp, sp, sp, sp
 End Sub
 ' Cooling schedule dispatch. Returns True if a row was applied; returns
 ' False ONLY for a chiller-OFF sub-72 band, so the caller runs free cooling.
@@ -489,21 +451,21 @@ Sub mixAirControl(maField, oaMode, oaCtl, raMode, raCtl, lastMove)
 	changeControl raMode, raCtl, nextRa, "manual"
 	If nextOa <> oa Or nextRa <> ra Then lastMove = Timer
 End Sub
-' Heat side: same as ScenarioA, but mixed air control owns the dampers.
-Sub ScenarioHeat(raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp)
+' Heat side: mixed air control owns the dampers; each band sets the rest.
+' blower = both blowers %, hv4Damper = HV-4 mixed air damper %, clgSp/htgSp = both
+' AHUs' discharge setpoints. Each RH setpoint follows its own return temperature.
+Sub ScenarioHeat(blower, hv4Damper, clgSp, htgSp)
 	mixAirControl ahu1MAa, ahu1OAdamperMode, ahu1OAdamper, ahu1RAdamperMode, ahu1RAdamper, lastMixMove1
 	mixAirControl ahu2MAa, ahu2OAdamperMode, ahu2OAdamper, ahu2RAdamperMode, ahu2RAdamper, lastMixMove2
-	If nosp = True Then
-		changeControl ahu1BlowerMode, ahu1BlowerControl, blowerControl1, "manual"
-		changeControl ahu2BlowerMode, ahu2BlowerControl, blowerControl2, "manual"
-	End If
+	changeControl ahu1BlowerMode, ahu1BlowerControl, blower, "manual"
+	changeControl ahu2BlowerMode, ahu2BlowerControl, blower, "manual"
 	changeControl hv4DamperMode, hv4MAdamper, hv4Damper, "manual"
-	changeControl ahu1RhSpMode, ahu1RhSp, rhSp1, "manual"
-	changeControl ahu2RhSpMode, ahu2RhSp, rhSp2, "manual"
-	changeControl ahu1ClgSpMode, ahu1ClgSp, clgSp1, "manual"
-	changeControl ahu2ClgSpMode, ahu2ClgSp, clgSp2, "manual"
-	changeControl ahu1HtgSpMode, ahu1HtgSp, htgSp1, "manual"
-	changeControl ahu2HtgSpMode, ahu2HtgSp, htgSp2, "manual"
+	changeControl ahu1RhSpMode, ahu1RhSp, humiditySp(ahu1RAtemp, ahu1RhSp), "manual"
+	changeControl ahu2RhSpMode, ahu2RhSp, humiditySp(ahu2RAtemp, ahu2RhSp), "manual"
+	changeControl ahu1ClgSpMode, ahu1ClgSp, clgSp, "manual"
+	changeControl ahu2ClgSpMode, ahu2ClgSp, clgSp, "manual"
+	changeControl ahu1HtgSpMode, ahu1HtgSp, htgSp, "manual"
+	changeControl ahu2HtgSpMode, ahu2HtgSp, htgSp, "manual"
 End Sub
 ' Free cooling: next damper position. Steps toward the limits while mixed air is
 ' above target, back off if it is below target, never a jump.
@@ -540,58 +502,30 @@ Sub mixFreeControl(maField, oaMode, oaCtl, raMode, raCtl, raMax, lastMove)
 	changeControl raMode, raCtl, nextRa, "manual"
 	If nextOa <> oa Or nextRa <> ra Then lastMove = Timer
 End Sub
-' Free cooling: same as ScenarioA, but mixed air control owns the dampers.
-' raDamper1/raDamper2 are the return damper closing limits from condE/condG.
-Sub ScenarioFree(raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp)
-	mixFreeControl ahu1MAa, ahu1OAdamperMode, ahu1OAdamper, ahu1RAdamperMode, ahu1RAdamper, raDamper1, lastMixMove1
-	mixFreeControl ahu2MAa, ahu2OAdamperMode, ahu2OAdamper, ahu2RAdamperMode, ahu2RAdamper, raDamper2, lastMixMove2
-	If nosp = True Then
-		changeControl ahu1BlowerMode, ahu1BlowerControl, blowerControl1, "manual"
-		changeControl ahu2BlowerMode, ahu2BlowerControl, blowerControl2, "manual"
-	End If
+' Free cooling: mixed air control owns the dampers; each band sets the rest.
+' raMax = the most the return damper may close (% closed) in this band.
+Sub ScenarioFree(raMax, blower, hv4Damper, rhSp, clgSp, htgSp)
+	mixFreeControl ahu1MAa, ahu1OAdamperMode, ahu1OAdamper, ahu1RAdamperMode, ahu1RAdamper, raMax, lastMixMove1
+	mixFreeControl ahu2MAa, ahu2OAdamperMode, ahu2OAdamper, ahu2RAdamperMode, ahu2RAdamper, raMax, lastMixMove2
+	changeControl ahu1BlowerMode, ahu1BlowerControl, blower, "manual"
+	changeControl ahu2BlowerMode, ahu2BlowerControl, blower, "manual"
 	changeControl hv4DamperMode, hv4MAdamper, hv4Damper, "manual"
-	changeControl ahu1RhSpMode, ahu1RhSp, rhSp1, "manual"
-	changeControl ahu2RhSpMode, ahu2RhSp, rhSp2, "manual"
-	changeControl ahu1ClgSpMode, ahu1ClgSp, clgSp1, "manual"
-	changeControl ahu2ClgSpMode, ahu2ClgSp, clgSp2, "manual"
-	changeControl ahu1HtgSpMode, ahu1HtgSp, htgSp1, "manual"
-	changeControl ahu2HtgSpMode, ahu2HtgSp, htgSp2, "manual"
+	changeControl ahu1RhSpMode, ahu1RhSp, rhSp, "manual"
+	changeControl ahu2RhSpMode, ahu2RhSp, rhSp, "manual"
+	changeControl ahu1ClgSpMode, ahu1ClgSp, clgSp, "manual"
+	changeControl ahu2ClgSpMode, ahu2ClgSp, clgSp, "manual"
+	changeControl ahu1HtgSpMode, ahu1HtgSp, htgSp, "manual"
+	changeControl ahu2HtgSpMode, ahu2HtgSp, htgSp, "manual"
 End Sub
-Function condE ( )
-				dataWindow.value = "Free Cooling Mode"
-				raDamper1 = 95
-				raDamper2 = 95
-				oaDamper1 = 100
-				oaDamper2 = 100
-				blowerControl1 = 82
-				blowerControl2 = 82
-				hv4Damper = 100
-				rhSp1 = 35
-				rhSp2 = 35
-				clgSp1 = 55
-				clgSp2 = 55
-				htgSp1 = 55
-				htgSp2 = 55
-				nosp = True
-				ScenarioFree raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+
+' Free cooling bands:         return max, blowers, HV-4, RH, clg, htg
+Function condE ( )            ' above 55 F
+	dataWindow.value = "Free Cooling Mode"
+	ScenarioFree 95, 82, 100, 35, 55, 55
 End Function
-Function condG ( )
-				dataWindow.value = "Free Cooling Mode"
-				raDamper1 = 85
-				raDamper2 = 85
-				oaDamper1 = 100
-				oaDamper2 = 100
-				blowerControl1 = 82
-				blowerControl2 = 82
-				hv4Damper = 50
-				rhSp1 = 35
-				rhSp2 = 35
-				clgSp1 = 53
-				clgSp2 = 53
-				htgSp1 = 53
-				htgSp2 = 53
-				nosp = True
-				ScenarioFree raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+Function condG ( )            ' 50 to 55 F
+	dataWindow.value = "Free Cooling Mode"
+	ScenarioFree 85, 82, 50, 35, 53, 53
 End Function
 ' 45 to 50 F outside with the chiller off: free cooling now starts above 50 F,
 ' so this band runs the heat side (condK + mixed air damper control).
@@ -599,234 +533,32 @@ Function condI ( )
 	dataWindow.value = "Normal Heating Mode"
 	Call condK()
 End Function
-Function condK ( )
-				raDamper1 = 50
-				raDamper2 = 50
-				oaDamper1 = 100
-				oaDamper2 = 100
-				If spMaintain.value = True Then
-					Call StaticPressureEast(currentMinutes)
-					Call StaticPressureWest(currentMinutes)
-					nosp = False
-				Else
-					nosp = True
-				End If
-				blowerControl1 = 82
-				blowerControl2 = 82
-				hv4Damper = 50
-				rhSp1 = humiditySp(ahu1RAtemp, ahu1RhSp)
-				rhSp2 = humiditySp(ahu2RAtemp, ahu2RhSp)
-				clgSp1 = 55
-				clgSp2 = 55
-				htgSp1 = 55
-				htgSp2 = 55
-				ScenarioHeat raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+
+' Heat side bands:            blowers, HV-4, clg, htg
+Function condK ( )            ' 40 to 45 F
+	ScenarioHeat 82, 50, 55, 55
 End Function
-Function condL ( )
-				raDamper1 = 50
-				raDamper2 = 50
-				oaDamper1 = 70
-				oaDamper2 = 70
-				If spMaintain.value = True Then
-					Call StaticPressureEast(currentMinutes)
-					Call StaticPressureWest(currentMinutes)
-					nosp = False
-				Else
-					nosp = True
-				End If
-				blowerControl1 = 82
-				blowerControl2 = 82
-				hv4Damper = 60
-				rhSp1 = humiditySp(ahu1RAtemp, ahu1RhSp)
-				rhSp2 = humiditySp(ahu2RAtemp, ahu2RhSp)
-				clgSp1 = 55
-				clgSp2 = 55
-				htgSp1 = 55
-				htgSp2 = 55
-				ScenarioHeat raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+Function condL ( )            ' 35 to 40 F
+	ScenarioHeat 82, 60, 55, 55
 End Function
-Function condM ( )
-				raDamper1 = 50
-				raDamper2 = 50
-				oaDamper1 = 65
-				oaDamper2 = 65
-				If spMaintain.value = True Then
-					Call StaticPressureEast(currentMinutes)
-					Call StaticPressureWest(currentMinutes)
-					nosp = False
-				Else
-					nosp = True
-				End If
-				blowerControl1 = 82
-				blowerControl2 = 82
-				hv4Damper = 60
-				rhSp1 = humiditySp(ahu1RAtemp, ahu1RhSp)
-				rhSp2 = humiditySp(ahu2RAtemp, ahu2RhSp)
-				clgSp1 = 55
-				clgSp2 = 55
-				htgSp1 = 58
-				htgSp2 = 58
-				ScenarioHeat raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+Function condM ( )            ' 30 to 35 F
+	ScenarioHeat 82, 60, 55, 58
 End Function
-Function condN ( )
-				raDamper1 = 50
-				raDamper2 = 50
-				oaDamper1 = 60
-				oaDamper2 = 60
-				If spMaintain.value = True Then
-					Call StaticPressureEast(currentMinutes)
-					Call StaticPressureWest(currentMinutes)
-					nosp = False
-				Else
-					nosp = True
-				End If
-				blowerControl1 = 88
-				blowerControl2 = 88
-				hv4Damper = 60
-				rhSp1 = humiditySp(ahu1RAtemp, ahu1RhSp)
-				rhSp2 = humiditySp(ahu2RAtemp, ahu2RhSp)
-				clgSp1 = 55
-				clgSp2 = 55
-				htgSp1 = 60
-				htgSp2 = 60
-				ScenarioHeat raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+Function condN ( )            ' 25 to 30 F
+	ScenarioHeat 88, 60, 55, 60
 End Function
-Function condO ( )
-				raDamper1 = 50
-				raDamper2 = 50
-				oaDamper1 = 55
-				oaDamper2 = 55
-				If spMaintain.value = True Then
-					Call StaticPressureEast(currentMinutes)
-					Call StaticPressureWest(currentMinutes)
-					nosp = False
-				Else
-					nosp = True
-				End If
-				blowerControl1 = 88
-				blowerControl2 = 88
-				hv4Damper = 60
-				rhSp1 = humiditySp(ahu1RAtemp, ahu1RhSp)
-				rhSp2 = humiditySp(ahu2RAtemp, ahu2RhSp)
-				clgSp1 = 55
-				clgSp2 = 55
-				htgSp1 = 60
-				htgSp2 = 60
-				ScenarioHeat raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+Function condO ( )            ' 20 to 25 F
+	ScenarioHeat 88, 60, 55, 60
 End Function
-Function condP ( )
-				raDamper1 = 50
-				raDamper2 = 50
-				oaDamper1 = 50
-				oaDamper2 = 50
-				If spMaintain.value = True Then
-					Call StaticPressureEast(currentMinutes)
-					Call StaticPressureWest(currentMinutes)
-					nosp = False
-				Else
-					nosp = True
-				End If
-				blowerControl1 = 86
-				blowerControl2 = 86
-				hv4Damper = 60
-				rhSp1 = humiditySp(ahu1RAtemp, ahu1RhSp)
-				rhSp2 = humiditySp(ahu2RAtemp, ahu2RhSp)
-				clgSp1 = 55
-				clgSp2 = 55
-				htgSp1 = 60
-				htgSp2 = 60
-				ScenarioHeat raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+Function condP ( )            ' 15 to 20 F
+	ScenarioHeat 86, 60, 55, 60
 End Function
-Function condQ ( )
-				raDamper1 = 45
-				raDamper2 =45
-				oaDamper1 = 45
-				oaDamper2 = 45
-				If spMaintain.value = True Then
-					Call StaticPressureEast(currentMinutes)
-					Call StaticPressureWest(currentMinutes)
-					nosp = False
-				Else
-					nosp = True
-				End If
-				blowerControl1 = 84
-				blowerControl2 = 84
-				hv4Damper = 60
-				rhSp1 = humiditySp(ahu1RAtemp, ahu1RhSp)
-				rhSp2 = humiditySp(ahu2RAtemp, ahu2RhSp)
-				clgSp1 = 55
-				clgSp2 = 55
-				htgSp1 = 60
-				htgSp2 = 60
-				ScenarioHeat raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+Function condQ ( )            ' 10 to 15 F
+	ScenarioHeat 84, 60, 55, 60
 End Function
-Function condR ( )
-				raDamper1 = 45
-				raDamper2 = 45
-				oaDamper1 = 45
-				oaDamper2 = 45
-				If spMaintain.value = True Then
-					Call StaticPressureEast(currentMinutes)
-					Call StaticPressureWest(currentMinutes)
-					nosp = False
-				Else
-					nosp = True
-				End If
-				blowerControl1 = 84
-				blowerControl2 = 84
-				hv4Damper = 60
-				rhSp1 = humiditySp(ahu1RAtemp, ahu1RhSp)
-				rhSp2 = humiditySp(ahu2RAtemp, ahu2RhSp)
-				clgSp1 = 55
-				clgSp2 = 55
-				htgSp1 = 60
-				htgSp2 = 60
-				ScenarioHeat raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+Function condR ( )            ' 0 to 10 F
+	ScenarioHeat 84, 60, 55, 60
 End Function
-Function condS ( )
-				raDamper1 = 45
-				raDamper2 = 45
-				oaDamper1 = 45
-				oaDamper2 = 45
-				If spMaintain.value = True Then
-					Call StaticPressureEast(currentMinutes)
-					Call StaticPressureWest(currentMinutes)
-					nosp = False
-				Else
-					nosp = True
-				End If
-				blowerControl1 = 84
-				blowerControl2 = 84
-				hv4Damper = 60
-				rhSp1 = humiditySp(ahu1RAtemp, ahu1RhSp)
-				rhSp2 = humiditySp(ahu2RAtemp, ahu2RhSp)
-				clgSp1 = 55
-				clgSp2 = 55
-				htgSp1 = 60
-				htgSp2 = 60
-				ScenarioHeat raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
-End Function
-Function condT ( )
-			raDamper1 = 45
-			raDamper2 = 45
-			oaDamper1 = 45
-			oaDamper2 = 45
-				If spMaintain.value = True Then
-					Call StaticPressureEast(currentMinutes)
-					Call StaticPressureWest(currentMinutes)
-					nosp = False
-				Else
-					nosp = True
-				End If
-			blowerControl1 = 84
-			blowerControl2 = 84
-			hv4Damper = 60
-			rhSp1 = humiditySp(ahu1RAtemp, ahu1RhSp)
-			rhSp2 = humiditySp(ahu2RAtemp, ahu2RhSp)
-			clgSp1 = 55
-			clgSp2 = 55
-			htgSp1 = 60
-			htgSp2 = 60
-			nosp = True
-			ScenarioHeat raDamper1,raDamper2,oaDamper1,oaDamper2,blowerControl1,blowerControl2,hv4Damper,rhSp1,rhSp2,clgSp1,clgSp2,htgSp1,htgSp2,nosp
+Function condT ( )            ' 0 F and below
+	ScenarioHeat 84, 60, 55, 60
 End Function
